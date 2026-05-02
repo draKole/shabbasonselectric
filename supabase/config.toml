@@ -1,1 +1,4 @@
 project_id = "cgvswpeabyyfrbperrov"
+
+[functions.calendar-feed]
+verify_jwt = false
