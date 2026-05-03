@@ -1,4 +1,4 @@
-import { Navigate, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap } from "lucide-react";
@@ -19,11 +19,13 @@ const NAV = [
 export default function AdminLayout() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (loading) return null;
   if (!user) return <Navigate to="/admin/auth" replace />;
 
-  if (!isAdmin) {
+  const onSetup = location.pathname === "/admin/setup";
+  if (!isAdmin && !onSetup) {
     return (
       <div className="container-tight py-16">
         <div className="max-w-md mx-auto rounded-lg border border-border p-6 bg-card">
