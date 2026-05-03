@@ -196,6 +196,12 @@ export default function AdminJobDetails() {
         </Card>
       </div>
 
+      <div className="grid gap-4 lg:grid-cols-2">
+        <JobPayments jobId={job.id} jobTotal={Number(job.job_total || job.estimate_amount || 0)} amountPaid={Number(job.amount_paid || 0)} balance={Number(job.balance_due || 0)} />
+        <JobMaterials jobId={job.id} />
+        <JobHourly job={job} update={update} />
+      </div>
+
       {photos.length > 0 && (
         <Card className="p-5">
           <h2 className="font-bold mb-3">Photos</h2>
