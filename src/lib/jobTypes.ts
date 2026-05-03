@@ -92,6 +92,7 @@ export const STATUS_COLOR: Record<string, string> = {
   paid: "bg-success text-success-foreground",
   review_requested: "bg-secondary/15 text-secondary",
   archived: "bg-muted text-muted-foreground",
+  cancelled: "bg-muted text-muted-foreground",
   lost_lead: "bg-muted text-muted-foreground",
 };
 
