@@ -14,6 +14,7 @@ export default function AdminSetup() {
   const [busy, setBusy] = useState(false);
   const [feedToken, setFeedToken] = useState<string>("");
   const [feedUrl, setFeedUrl] = useState<string>("");
+  const [webcalUrl, setWebcalUrl] = useState<string>("");
 
   useEffect(() => {
     supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin")
@@ -25,7 +26,9 @@ export default function AdminSetup() {
 
   function updateFeedUrl(token: string) {
     const supaUrl = import.meta.env.VITE_SUPABASE_URL;
-    setFeedUrl(`${supaUrl}/functions/v1/calendar-feed?token=${encodeURIComponent(token)}`);
+    const https = `${supaUrl}/functions/v1/calendar-feed?token=${encodeURIComponent(token)}`;
+    setFeedUrl(https);
+    setWebcalUrl(https.replace(/^https?:\/\//, "webcal://"));
   }
 
   async function claimAdmin() {
