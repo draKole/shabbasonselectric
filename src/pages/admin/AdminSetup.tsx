@@ -91,9 +91,9 @@ export default function AdminSetup() {
           <div className="flex-1">
             <h2 className="font-bold text-lg">Calendar Feed</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Subscribe to all your scheduled jobs in Google Calendar or Apple Calendar. Generate a private
-              token, then add it as <code className="bg-muted px-1 rounded">CALENDAR_FEED_TOKEN</code> in
-              Cloud Secrets so the feed function can validate it.
+              Subscribe to all your scheduled jobs in Apple Calendar or Google Calendar. Generate a private
+              token below, then save the SAME token as <code className="bg-muted px-1 rounded">CALENDAR_FEED_TOKEN</code> in
+              Cloud Secrets so the feed can validate it.
             </p>
 
             <div className="mt-4 space-y-3">
@@ -101,7 +101,7 @@ export default function AdminSetup() {
               {feedToken && (
                 <>
                   <div>
-                    <Label>Token (also save in Cloud Secrets)</Label>
+                    <Label>Token (paste into Cloud Secrets as CALENDAR_FEED_TOKEN)</Label>
                     <div className="flex gap-2 mt-1">
                       <Input value={feedToken} readOnly />
                       <Button type="button" variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(feedToken); toast.success("Copied"); }}>
@@ -110,7 +110,22 @@ export default function AdminSetup() {
                     </div>
                   </div>
                   <div>
-                    <Label>Subscribe URL (paste into Google/Apple Calendar)</Label>
+                    <Label>Apple Calendar — one-tap subscribe</Label>
+                    <div className="flex gap-2 mt-1">
+                      <Input value={webcalUrl} readOnly />
+                      <Button type="button" variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(webcalUrl); toast.success("Copied"); }}>
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <a href={webcalUrl}>
+                      <Button type="button" className="mt-2 w-full sm:w-auto">Subscribe in Apple Calendar</Button>
+                    </a>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Tap on your iPhone or Mac — Apple Calendar opens and asks to confirm.
+                    </p>
+                  </div>
+                  <div>
+                    <Label>Google Calendar URL</Label>
                     <div className="flex gap-2 mt-1">
                       <Input value={feedUrl} readOnly />
                       <Button type="button" variant="outline" size="icon" onClick={() => { navigator.clipboard.writeText(feedUrl); toast.success("Copied"); }}>
@@ -118,8 +133,14 @@ export default function AdminSetup() {
                       </Button>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      In Google Calendar: Other calendars → + → From URL. In Apple Calendar: File → New Calendar Subscription.
+                      Google Calendar: Other calendars → + → From URL → paste this link.
                     </p>
+                  </div>
+                  <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-1">
+                    <p className="font-semibold">Not syncing? Check these:</p>
+                    <p>1. The token above must be saved in Cloud Secrets as <code>CALENDAR_FEED_TOKEN</code> (exact, no spaces).</p>
+                    <p>2. You need at least one job with a Scheduled Start time, or the feed is empty.</p>
+                    <p>3. Apple Calendar can take 5–15 min — set Auto-refresh to "Every 5 min" in calendar settings.</p>
                   </div>
                 </>
               )}
