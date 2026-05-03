@@ -19,11 +19,13 @@ const NAV = [
 export default function AdminLayout() {
   const { user, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   if (loading) return null;
   if (!user) return <Navigate to="/admin/auth" replace />;
 
-  if (!isAdmin) {
+  const onSetup = location.pathname === "/admin/setup";
+  if (!isAdmin && !onSetup) {
     return (
       <div className="container-tight py-16">
         <div className="max-w-md mx-auto rounded-lg border border-border p-6 bg-card">
