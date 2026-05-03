@@ -57,6 +57,30 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      <Card className="p-4 bg-muted/40 border-secondary/30">
+        <h2 className="font-bold mb-2">How leads & money work</h2>
+        <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          <div><b>New Lead</b> — someone requested work, not confirmed.</div>
+          <div><b>Contacted</b> — I replied or called them.</div>
+          <div><b>Estimate Scheduled</b> — going to look at the job.</div>
+          <div><b>Estimate Sent</b> — I gave them a price.</div>
+          <div><b>Approved / Scheduled</b> — accepted, on calendar.</div>
+          <div><b>In Progress</b> — work has started.</div>
+          <div><b>Materials Needed</b> — paused until materials ready.</div>
+          <div><b>Waiting on Inspection</b> — done, awaiting inspection.</div>
+          <div><b>Completed</b> — work finished.</div>
+          <div><b>Paid</b> — customer paid in full.</div>
+          <div><b>Cancelled / Lost Lead</b> — did not move forward.</div>
+          <div><b>Archived</b> — hidden from active list, kept in records.</div>
+        </div>
+        <div className="mt-3 pt-3 border-t border-border grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
+          <div><b>Open Balance</b> = Job Total − Amount Paid.</div>
+          <div><b>Materials Cost</b> = money I spent on materials.</div>
+          <div><b>Profit Estimate</b> = Job Total − materials I paid.</div>
+          <div><b>Hourly Comparison</b> = hourly value vs flat rate charged.</div>
+        </div>
+      </Card>
+
       <Card className="p-4">
         <h2 className="font-bold mb-3">Recent jobs</h2>
         <div className="space-y-2">
