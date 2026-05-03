@@ -149,16 +149,20 @@ export default function AdminJobDetails() {
         </Card>
 
         <Card className="p-5 space-y-3">
-          <h2 className="font-bold">Pricing</h2>
+          <h2 className="font-bold">Pricing & Payment Status</h2>
+          <p className="text-xs text-muted-foreground">Set Job Total here. Materials and Payments below auto-update Balance Due and Payment Status.</p>
           <div className="grid grid-cols-2 gap-2">
-            <div><Label>Estimate</Label><Input type="number" step="0.01" defaultValue={job.estimate_amount} onBlur={(e) => update({ estimate_amount: Number(e.target.value) })} /></div>
-            <div><Label>Deposit Req</Label><Input type="number" step="0.01" defaultValue={job.deposit_required} onBlur={(e) => update({ deposit_required: Number(e.target.value) })} /></div>
-            <div><Label>Deposit Paid</Label><Input type="number" step="0.01" defaultValue={job.deposit_paid} onBlur={(e) => update({ deposit_paid: Number(e.target.value) })} /></div>
-            <div><Label>Materials</Label><Input type="number" step="0.01" defaultValue={job.materials_cost} onBlur={(e) => update({ materials_cost: Number(e.target.value) })} /></div>
-            <div><Label>Labor</Label><Input type="number" step="0.01" defaultValue={job.labor_amount} onBlur={(e) => update({ labor_amount: Number(e.target.value) })} /></div>
-            <div><Label>Balance Due</Label><Input type="number" step="0.01" defaultValue={job.balance_due} onBlur={(e) => update({ balance_due: Number(e.target.value) })} /></div>
+            <div><Label>Job Total</Label><Input type="number" step="0.01" defaultValue={job.job_total || job.estimate_amount || 0} onBlur={(e) => update({ job_total: Number(e.target.value) })} /></div>
+            <div><Label>Deposit Required</Label><Input type="number" step="0.01" defaultValue={job.deposit_required} onBlur={(e) => update({ deposit_required: Number(e.target.value) })} /></div>
+            <div><Label>Amount Paid (auto)</Label><Input type="number" value={Number(job.amount_paid || 0).toFixed(2)} disabled /></div>
+            <div><Label>Open Balance (auto)</Label><Input type="number" value={Number(job.balance_due || 0).toFixed(2)} disabled /></div>
+            <div className="col-span-2">
+              <Label>Payment Status</Label>
+              <div className="mt-1"><Badge>{PAYMENT_STATUS_LABELS[job.payment_status] || job.payment_status}</Badge></div>
+            </div>
           </div>
         </Card>
+
 
         <Card className="p-5 space-y-3">
           <h2 className="font-bold">Permit & Inspection</h2>
