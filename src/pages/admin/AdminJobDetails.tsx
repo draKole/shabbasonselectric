@@ -133,6 +133,7 @@ export default function AdminJobDetails() {
                 {Object.entries(JOB_STATUS_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
+            {STATUS_HELP[job.status] && <p className="text-xs text-muted-foreground mt-1">{STATUS_HELP[job.status]}</p>}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
