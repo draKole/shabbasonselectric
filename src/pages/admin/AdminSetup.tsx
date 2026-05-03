@@ -32,7 +32,7 @@ export default function AdminSetup() {
     if (!user) return;
     setBusy(true);
     try {
-      const { error } = await supabase.from("user_roles").insert({ user_id: user.id, role: "admin" });
+      const { error } = await supabase.rpc("claim_first_admin" as any);
       if (error) throw error;
       toast.success("Admin role assigned. Refreshing...");
       setTimeout(() => window.location.reload(), 800);
