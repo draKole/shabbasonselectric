@@ -35,7 +35,41 @@ export const JOB_STATUS_LABELS: Record<string, string> = {
   paid: "Paid",
   review_requested: "Review Requested",
   archived: "Archived",
+  cancelled: "Cancelled",
   lost_lead: "Lost Lead",
+};
+
+export const PAYMENT_STATUS_LABELS: Record<string, string> = {
+  unpaid: "Unpaid",
+  deposit_paid: "Deposit Paid",
+  partial: "Partially Paid",
+  paid: "Paid",
+  refunded: "Refunded",
+};
+
+export const PAYMENT_STATUS_COLOR: Record<string, string> = {
+  unpaid: "bg-muted text-foreground",
+  deposit_paid: "bg-secondary/15 text-secondary",
+  partial: "bg-accent/30 text-accent-foreground",
+  paid: "bg-success text-success-foreground",
+  refunded: "bg-muted text-muted-foreground",
+};
+
+export const STATUS_HELP: Record<string, string> = {
+  new_lead: "Someone requested work but it is not confirmed yet.",
+  contacted: "I replied or called them.",
+  estimate_scheduled: "I'm going to look at the job.",
+  estimate_sent: "I gave them a price.",
+  approved: "They accepted; the job is on the calendar.",
+  scheduled: "Job is on the calendar.",
+  in_progress: "I started the work.",
+  materials_needed: "Job is paused until materials are ready.",
+  waiting_on_inspection: "Work is done but inspection is needed.",
+  completed: "Work is finished.",
+  paid: "Customer paid in full.",
+  cancelled: "Job was cancelled.",
+  lost_lead: "Customer did not move forward.",
+  archived: "Hidden from active jobs but kept in records.",
 };
 
 // Color tokens (HSL via tailwind tokens) for calendar/status pills
@@ -58,6 +92,7 @@ export const STATUS_COLOR: Record<string, string> = {
   paid: "bg-success text-success-foreground",
   review_requested: "bg-secondary/15 text-secondary",
   archived: "bg-muted text-muted-foreground",
+  cancelled: "bg-muted text-muted-foreground",
   lost_lead: "bg-muted text-muted-foreground",
 };
 

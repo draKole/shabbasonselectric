@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { JOB_STATUS_LABELS, JOB_TYPE_LABELS, STATUS_COLOR } from "@/lib/jobTypes";
+import { JOB_STATUS_LABELS, JOB_TYPE_LABELS, STATUS_COLOR, PAYMENT_STATUS_LABELS, STATUS_HELP } from "@/lib/jobTypes";
 import { Phone, MessageSquare, CalendarPlus, Download, Star, ArrowLeft } from "lucide-react";
+import JobMaterials from "@/components/admin/JobMaterials";
+import JobPayments from "@/components/admin/JobPayments";
+import JobHourly from "@/components/admin/JobHourly";
 import { toast } from "sonner";
 import { BUSINESS, telHref, smsHref } from "@/lib/business";
 
@@ -130,6 +133,7 @@ export default function AdminJobDetails() {
                 {Object.entries(JOB_STATUS_LABELS).map(([v, l]) => <SelectItem key={v} value={v}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
+            {STATUS_HELP[job.status] && <p className="text-xs text-muted-foreground mt-1">{STATUS_HELP[job.status]}</p>}
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -146,16 +150,20 @@ export default function AdminJobDetails() {
         </Card>
 
         <Card className="p-5 space-y-3">
-          <h2 className="font-bold">Pricing</h2>
+          <h2 className="font-bold">Pricing & Payment Status</h2>
+          <p className="text-xs text-muted-foreground">Set Job Total here. Materials and Payments below auto-update Balance Due and Payment Status.</p>
           <div className="grid grid-cols-2 gap-2">
-            <div><Label>Estimate</Label><Input type="number" step="0.01" defaultValue={job.estimate_amount} onBlur={(e) => update({ estimate_amount: Number(e.target.value) })} /></div>
-            <div><Label>Deposit Req</Label><Input type="number" step="0.01" defaultValue={job.deposit_required} onBlur={(e) => update({ deposit_required: Number(e.target.value) })} /></div>
-            <div><Label>Deposit Paid</Label><Input type="number" step="0.01" defaultValue={job.deposit_paid} onBlur={(e) => update({ deposit_paid: Number(e.target.value) })} /></div>
-            <div><Label>Materials</Label><Input type="number" step="0.01" defaultValue={job.materials_cost} onBlur={(e) => update({ materials_cost: Number(e.target.value) })} /></div>
-            <div><Label>Labor</Label><Input type="number" step="0.01" defaultValue={job.labor_amount} onBlur={(e) => update({ labor_amount: Number(e.target.value) })} /></div>
-            <div><Label>Balance Due</Label><Input type="number" step="0.01" defaultValue={job.balance_due} onBlur={(e) => update({ balance_due: Number(e.target.value) })} /></div>
+            <div><Label>Job Total</Label><Input type="number" step="0.01" defaultValue={job.job_total || job.estimate_amount || 0} onBlur={(e) => update({ job_total: Number(e.target.value) })} /></div>
+            <div><Label>Deposit Required</Label><Input type="number" step="0.01" defaultValue={job.deposit_required} onBlur={(e) => update({ deposit_required: Number(e.target.value) })} /></div>
+            <div><Label>Amount Paid (auto)</Label><Input type="number" value={Number(job.amount_paid || 0).toFixed(2)} disabled /></div>
+            <div><Label>Open Balance (auto)</Label><Input type="number" value={Number(job.balance_due || 0).toFixed(2)} disabled /></div>
+            <div className="col-span-2">
+              <Label>Payment Status</Label>
+              <div className="mt-1"><Badge>{PAYMENT_STATUS_LABELS[job.payment_status] || job.payment_status}</Badge></div>
+            </div>
           </div>
         </Card>
+
 
         <Card className="p-5 space-y-3">
           <h2 className="font-bold">Permit & Inspection</h2>
@@ -186,6 +194,12 @@ export default function AdminJobDetails() {
           <div><Label>Customer Description</Label><Textarea defaultValue={job.description || ""} onBlur={(e) => update({ description: e.target.value })} /></div>
           <div><Label>Internal Notes</Label><Textarea defaultValue={job.internal_notes || ""} onBlur={(e) => update({ internal_notes: e.target.value })} /></div>
         </Card>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <JobPayments jobId={job.id} jobTotal={Number(job.job_total || job.estimate_amount || 0)} amountPaid={Number(job.amount_paid || 0)} balance={Number(job.balance_due || 0)} />
+        <JobMaterials jobId={job.id} />
+        <JobHourly job={job} update={update} />
       </div>
 
       {photos.length > 0 && (

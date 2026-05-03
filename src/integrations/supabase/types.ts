@@ -180,6 +180,84 @@ export type Database = {
           },
         ]
       }
+      job_materials: {
+        Row: {
+          cost: number
+          created_at: string
+          description: string
+          id: string
+          job_id: string
+          notes: string | null
+          paid_by: string
+          purchased_on: string | null
+          receipt_url: string | null
+          updated_at: string
+          vendor: string | null
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          description: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          paid_by?: string
+          purchased_on?: string | null
+          receipt_url?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          description?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          paid_by?: string
+          purchased_on?: string | null
+          receipt_url?: string | null
+          updated_at?: string
+          vendor?: string | null
+        }
+        Relationships: []
+      }
+      job_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_deposit: boolean
+          job_id: string
+          method: string
+          notes: string | null
+          paid_on: string
+          receipt_url: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_deposit?: boolean
+          job_id: string
+          method?: string
+          notes?: string | null
+          paid_on?: string
+          receipt_url?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_deposit?: boolean
+          job_id?: string
+          method?: string
+          notes?: string | null
+          paid_on?: string
+          receipt_url?: string | null
+        }
+        Relationships: []
+      }
       job_photos: {
         Row: {
           caption: string | null
@@ -261,9 +339,12 @@ export type Database = {
       }
       jobs: {
         Row: {
+          actual_hours: number | null
           address: string | null
           alternate_date: string | null
           alternate_time_window: string | null
+          amount_paid: number | null
+          archived: boolean
           balance_due: number | null
           city: string | null
           corrections_needed: string | null
@@ -273,8 +354,10 @@ export type Database = {
           deposit_required: number | null
           description: string | null
           estimate_amount: number | null
+          estimated_hours: number | null
           has_existing_estimate: boolean | null
           has_materials: string | null
+          hourly_rate: number | null
           id: string
           inspection_date: string | null
           inspection_needed: Database["public"]["Enums"]["permit_status"] | null
@@ -285,6 +368,7 @@ export type Database = {
           inspection_type: Database["public"]["Enums"]["inspection_type"] | null
           internal_notes: string | null
           job_title: string | null
+          job_total: number | null
           job_type: Database["public"]["Enums"]["job_type"]
           labor_amount: number | null
           last_contact: string | null
@@ -310,9 +394,12 @@ export type Database = {
           zip: string | null
         }
         Insert: {
+          actual_hours?: number | null
           address?: string | null
           alternate_date?: string | null
           alternate_time_window?: string | null
+          amount_paid?: number | null
+          archived?: boolean
           balance_due?: number | null
           city?: string | null
           corrections_needed?: string | null
@@ -322,8 +409,10 @@ export type Database = {
           deposit_required?: number | null
           description?: string | null
           estimate_amount?: number | null
+          estimated_hours?: number | null
           has_existing_estimate?: boolean | null
           has_materials?: string | null
+          hourly_rate?: number | null
           id?: string
           inspection_date?: string | null
           inspection_needed?:
@@ -338,6 +427,7 @@ export type Database = {
             | null
           internal_notes?: string | null
           job_title?: string | null
+          job_total?: number | null
           job_type?: Database["public"]["Enums"]["job_type"]
           labor_amount?: number | null
           last_contact?: string | null
@@ -363,9 +453,12 @@ export type Database = {
           zip?: string | null
         }
         Update: {
+          actual_hours?: number | null
           address?: string | null
           alternate_date?: string | null
           alternate_time_window?: string | null
+          amount_paid?: number | null
+          archived?: boolean
           balance_due?: number | null
           city?: string | null
           corrections_needed?: string | null
@@ -375,8 +468,10 @@ export type Database = {
           deposit_required?: number | null
           description?: string | null
           estimate_amount?: number | null
+          estimated_hours?: number | null
           has_existing_estimate?: boolean | null
           has_materials?: string | null
+          hourly_rate?: number | null
           id?: string
           inspection_date?: string | null
           inspection_needed?:
@@ -391,6 +486,7 @@ export type Database = {
             | null
           internal_notes?: string | null
           job_title?: string | null
+          job_total?: number | null
           job_type?: Database["public"]["Enums"]["job_type"]
           labor_amount?: number | null
           last_contact?: string | null
@@ -650,6 +746,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      recompute_job_totals: { Args: { _job_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "staff"
@@ -696,6 +793,7 @@ export type Database = {
         | "review_requested"
         | "archived"
         | "lost_lead"
+        | "cancelled"
       job_type:
         | "electrical_repair"
         | "troubleshooting"
@@ -712,7 +810,12 @@ export type Database = {
         | "inspection_permit_support"
         | "contractor_support"
         | "other"
-      payment_status: "unpaid" | "partial" | "paid"
+      payment_status:
+        | "unpaid"
+        | "partial"
+        | "paid"
+        | "deposit_paid"
+        | "refunded"
       permit_status: "yes" | "no" | "not_sure"
       photo_type: "customer_upload" | "before" | "after" | "receipt" | "other"
       portfolio_category:
@@ -901,6 +1004,7 @@ export const Constants = {
         "review_requested",
         "archived",
         "lost_lead",
+        "cancelled",
       ],
       job_type: [
         "electrical_repair",
@@ -919,7 +1023,7 @@ export const Constants = {
         "contractor_support",
         "other",
       ],
-      payment_status: ["unpaid", "partial", "paid"],
+      payment_status: ["unpaid", "partial", "paid", "deposit_paid", "refunded"],
       permit_status: ["yes", "no", "not_sure"],
       photo_type: ["customer_upload", "before", "after", "receipt", "other"],
       portfolio_category: [
