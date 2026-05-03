@@ -8,8 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { JOB_STATUS_LABELS, JOB_TYPE_LABELS, STATUS_COLOR } from "@/lib/jobTypes";
+import { JOB_STATUS_LABELS, JOB_TYPE_LABELS, STATUS_COLOR, PAYMENT_STATUS_LABELS, STATUS_HELP } from "@/lib/jobTypes";
 import { Phone, MessageSquare, CalendarPlus, Download, Star, ArrowLeft } from "lucide-react";
+import JobMaterials from "@/components/admin/JobMaterials";
+import JobPayments from "@/components/admin/JobPayments";
+import JobHourly from "@/components/admin/JobHourly";
 import { toast } from "sonner";
 import { BUSINESS, telHref, smsHref } from "@/lib/business";
 
