@@ -102,16 +102,12 @@ export default function Home() {
                 <Calendar className="h-5 w-5" /> Schedule Free Estimate
               </Button>
             </Link>
-            <a href={telHref}>
-              <Button size="lg" variant="outline" className="gap-2 bg-background/10 border-background/30 text-primary-foreground hover:bg-background/20">
-                <Phone className="h-5 w-5" /> Call {BUSINESS.phone}
-              </Button>
-            </a>
-            <a href={smsHref()}>
-              <Button size="lg" variant="outline" className="gap-2 bg-background/10 border-background/30 text-primary-foreground hover:bg-background/20">
-                <MessageSquare className="h-5 w-5" /> Text Us Now
-              </Button>
-            </a>
+            <Button asChild size="lg" variant="outline" className="gap-2 bg-background/10 border-background/30 text-primary-foreground hover:bg-background/20">
+              <a href={telHref}><Phone className="h-5 w-5" /> Call {BUSINESS.phone}</a>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="gap-2 bg-background/10 border-background/30 text-primary-foreground hover:bg-background/20">
+              <a href={smsHref()}><MessageSquare className="h-5 w-5" /> Text Us Now</a>
+            </Button>
           </div>
 
           {/* Trust badges */}
@@ -230,11 +226,9 @@ export default function Home() {
             Call or text {BUSINESS.phone} or schedule a free estimate online.
           </p>
           <div className="mt-6 flex flex-wrap gap-3 justify-center">
-            <a href={telHref}>
-              <Button size="lg" className="bg-success text-success-foreground hover:bg-success/90 gap-2">
-                <Phone className="h-5 w-5" /> Call Now
-              </Button>
-            </a>
+            <Button asChild size="lg" className="bg-success text-success-foreground hover:bg-success/90 gap-2">
+              <a href={telHref}><Phone className="h-5 w-5" /> Call Now</a>
+            </Button>
             <Link to="/schedule">
               <Button size="lg" variant="outline" className="gap-2 bg-background/10 border-background/30 text-primary-foreground hover:bg-background/20">
                 <Calendar className="h-5 w-5" /> Schedule Service
