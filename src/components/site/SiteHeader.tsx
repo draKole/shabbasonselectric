@@ -48,11 +48,9 @@ export const SiteHeader = () => {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
-          <a href={telHref}>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Phone className="h-4 w-4" /> {BUSINESS.phone}
-            </Button>
-          </a>
+          <Button asChild variant="outline" size="sm" className="gap-2">
+            <a href={telHref}><Phone className="h-4 w-4" /> {BUSINESS.phone}</a>
+          </Button>
           <Link to="/schedule">
             <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90">
               Schedule
