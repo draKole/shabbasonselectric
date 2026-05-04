@@ -25,6 +25,8 @@ import AdminPipeline from "./pages/admin/AdminPipeline";
 import AdminEstimates from "./pages/admin/AdminEstimates";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminPortfolio from "./pages/admin/AdminPortfolio";
+import AdminMessages from "./pages/admin/AdminMessages";
+import AdminMoney from "./pages/admin/AdminMoney";
 import AdminSetup from "./pages/admin/AdminSetup";
 
 const queryClient = new QueryClient();
@@ -58,6 +60,8 @@ const App = () => (
               <Route path="estimates" element={<AdminEstimates />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="portfolio" element={<AdminPortfolio />} />
+              <Route path="messages" element={<AdminMessages />} />
+              <Route path="money" element={<AdminMoney />} />
               <Route path="setup" element={<AdminSetup />} />
             </Route>
             <Route path="*" element={<NotFound />} />
