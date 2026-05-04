@@ -97,7 +97,7 @@ export default function AdminMoney() {
         </p>
         <div className="grid gap-3 sm:grid-cols-3 mt-4">
           <SplitRow label="Debt (75%)" value={fmt(monthData.debt)} color="bg-destructive/10 text-destructive" />
-          <SplitRow label="Taxes (10%)" value={fmt(monthData.taxes)} color="bg-warning/10 text-warning-foreground" />
+          <SplitRow label="Taxes (10%)" value={fmt(monthData.taxes)} color="bg-accent text-accent-foreground" />
           <SplitRow label="Bills (15%)" value={fmt(monthData.bills)} color="bg-secondary/10 text-secondary" />
         </div>
       </Card>
