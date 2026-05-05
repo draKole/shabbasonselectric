@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check } from "lucide-react";
+import { useAppSetting } from "@/lib/useAppSettings";
+import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ newLeads: 0, scheduled: 0, completed: 0, openEst: 0, reviewsNeeded: 0, openBalance: 0 });
   const [recent, setRecent] = useState<any[]>([]);
+  const [followUps, setFollowUps] = useState<any[]>([]);
+  const { value: googleUrl } = useAppSetting("google_review_url");
+
 
   useEffect(() => {
     (async () => {
