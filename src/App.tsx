@@ -28,6 +28,9 @@ import AdminPortfolio from "./pages/admin/AdminPortfolio";
 import AdminMessages from "./pages/admin/AdminMessages";
 import AdminMoney from "./pages/admin/AdminMoney";
 import AdminSetup from "./pages/admin/AdminSetup";
+import AdminSettings from "./pages/admin/AdminSettings";
+import AdminApplications from "./pages/admin/AdminApplications";
+import Careers from "./pages/Careers";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +51,7 @@ const App = () => (
               <Route path="/contractor-support" element={<ContractorSupport />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/careers" element={<Careers />} />
             </Route>
             <Route path="/admin/auth" element={<AdminAuth />} />
             <Route path="/admin" element={<AdminLayout />}>
@@ -62,6 +66,8 @@ const App = () => (
               <Route path="portfolio" element={<AdminPortfolio />} />
               <Route path="messages" element={<AdminMessages />} />
               <Route path="money" element={<AdminMoney />} />
+              <Route path="applications" element={<AdminApplications />} />
+              <Route path="settings" element={<AdminSettings />} />
               <Route path="setup" element={<AdminSetup />} />
             </Route>
             <Route path="*" element={<NotFound />} />

@@ -12,6 +12,7 @@ const NAV = [
   { to: "/contractor-support", label: "Permit Support" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
+  { to: "/careers", label: "Careers" },
 ];
 
 export const SiteHeader = () => {

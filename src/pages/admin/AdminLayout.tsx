@@ -1,7 +1,7 @@
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, MessageSquare, DollarSign } from "lucide-react";
+import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, MessageSquare, DollarSign, Users, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BUSINESS } from "@/lib/business";
 
@@ -15,6 +15,8 @@ const NAV = [
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },
+  { to: "/admin/applications", label: "Applications", icon: Users },
+  { to: "/admin/settings", label: "Settings", icon: Settings },
   { to: "/admin/setup", label: "Setup", icon: ListChecks },
 ];
 
