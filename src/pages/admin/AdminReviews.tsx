@@ -54,7 +54,7 @@ export default function AdminReviews() {
   }
 
   async function toggle(r: any, field: "public_visible" | "featured") {
-    await supabase.from("reviews").update({ [field]: !r[field] }).eq("id", r.id);
+    await supabase.from("reviews").update({ [field]: !r[field] } as any).eq("id", r.id);
     load();
   }
 
