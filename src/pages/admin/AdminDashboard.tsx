@@ -110,6 +110,36 @@ export default function AdminDashboard() {
       </Card>
 
       <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold flex items-center gap-2"><Star className="h-4 w-4 text-accent" /> Review Follow-Ups</h2>
+          <span className="text-xs text-muted-foreground">{followUps.length} pending</span>
+        </div>
+        {!googleUrl && (
+          <div className="text-xs text-muted-foreground mb-2">
+            Tip: <Link to="/admin/setup" className="underline">Add your Google review link in Settings</Link> so the message includes it.
+          </div>
+        )}
+        <div className="space-y-2">
+          {followUps.map((j: any) => (
+            <div key={j.id} className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-md border border-border">
+              <div className="min-w-0">
+                <div className="font-semibold">{j.customers?.name || "—"}</div>
+                <div className="text-xs text-muted-foreground">{j.job_type} · {new Date(j.updated_at).toLocaleDateString()} · {j.customers?.phone}</div>
+              </div>
+              <div className="flex gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <a href={`sms:${j.customers?.phone}?&body=${encodeURIComponent(reviewText(j.customers?.name))}`}>Text</a>
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => copyText(j.customers?.name)}><Copy className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" onClick={() => markRequested(j.id)} className="bg-success text-success-foreground hover:bg-success/90"><Check className="h-3.5 w-3.5" /> Mark sent</Button>
+              </div>
+            </div>
+          ))}
+          {followUps.length === 0 && <div className="text-sm text-muted-foreground p-3">All caught up!</div>}
+        </div>
+      </Card>
+
+      <Card className="p-4">
         <h2 className="font-bold mb-3">Recent jobs</h2>
         <div className="space-y-2">
           {recent.map((j: any) => (
