@@ -2,11 +2,17 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check } from "lucide-react";
+import { useAppSetting } from "@/lib/useAppSettings";
+import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({ newLeads: 0, scheduled: 0, completed: 0, openEst: 0, reviewsNeeded: 0, openBalance: 0 });
   const [recent, setRecent] = useState<any[]>([]);
+  const [followUps, setFollowUps] = useState<any[]>([]);
+  const { value: googleUrl } = useAppSetting("google_review_url");
+
 
   useEffect(() => {
     (async () => {
@@ -29,8 +35,30 @@ export default function AdminDashboard() {
         openBalance: (bal || []).reduce((s, j: any) => s + Number(j.balance_due || 0), 0),
       });
       setRecent(rec || []);
+      const { data: fu } = await supabase
+        .from("jobs")
+        .select("id, status, updated_at, job_type, customers(name, phone)")
+        .in("status", ["completed", "paid"])
+        .eq("review_requested", false)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+      setFollowUps((fu || []).filter((j: any) => j.customers?.phone));
     })();
   }, []);
+
+  function reviewText(name?: string) {
+    return `Thank you for choosing Shabba & Sons Electric${name ? `, ${name}` : ""}. If you were happy with the work, I'd really appreciate a quick Google review. It helps my family business grow. ${googleUrl || "[Google Review Link]"}`;
+  }
+  async function copyText(name?: string) {
+    await navigator.clipboard.writeText(reviewText(name));
+    toast.success("Copied review request");
+  }
+  async function markRequested(id: string) {
+    const { error } = await supabase.from("jobs").update({ review_requested: true, review_requested_at: new Date().toISOString() } as any).eq("id", id);
+    if (error) return toast.error(error.message);
+    setFollowUps((prev) => prev.filter((j) => j.id !== id));
+    toast.success("Marked as requested");
+  }
 
   const cards = [
     { label: "New leads (week)", value: stats.newLeads, icon: Briefcase, color: "text-secondary" },
@@ -78,6 +106,36 @@ export default function AdminDashboard() {
           <div><b>Materials Cost</b> = money I spent on materials.</div>
           <div><b>Profit Estimate</b> = Job Total − materials I paid.</div>
           <div><b>Hourly Comparison</b> = hourly value vs flat rate charged.</div>
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold flex items-center gap-2"><Star className="h-4 w-4 text-accent" /> Review Follow-Ups</h2>
+          <span className="text-xs text-muted-foreground">{followUps.length} pending</span>
+        </div>
+        {!googleUrl && (
+          <div className="text-xs text-muted-foreground mb-2">
+            Tip: <Link to="/admin/setup" className="underline">Add your Google review link in Settings</Link> so the message includes it.
+          </div>
+        )}
+        <div className="space-y-2">
+          {followUps.map((j: any) => (
+            <div key={j.id} className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-md border border-border">
+              <div className="min-w-0">
+                <div className="font-semibold">{j.customers?.name || "—"}</div>
+                <div className="text-xs text-muted-foreground">{j.job_type} · {new Date(j.updated_at).toLocaleDateString()} · {j.customers?.phone}</div>
+              </div>
+              <div className="flex gap-2">
+                <Button asChild size="sm" variant="outline">
+                  <a href={`sms:${j.customers?.phone}?&body=${encodeURIComponent(reviewText(j.customers?.name))}`}>Text</a>
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => copyText(j.customers?.name)}><Copy className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" onClick={() => markRequested(j.id)} className="bg-success text-success-foreground hover:bg-success/90"><Check className="h-3.5 w-3.5" /> Mark sent</Button>
+              </div>
+            </div>
+          ))}
+          {followUps.length === 0 && <div className="text-sm text-muted-foreground p-3">All caught up!</div>}
         </div>
       </Card>
 

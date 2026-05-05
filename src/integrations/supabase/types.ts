@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           calendar_status: string | null
@@ -179,6 +197,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_applications: {
+        Row: {
+          admin_notes: string | null
+          availability: string | null
+          city: string | null
+          created_at: string
+          desired_pay: string | null
+          email: string | null
+          follows_code: boolean | null
+          full_name: string
+          has_experience: boolean | null
+          has_tools: boolean | null
+          has_transport: boolean | null
+          id: string
+          is_licensed: boolean | null
+          notes: string | null
+          phone: string
+          photo_urls: string[] | null
+          skills: string[] | null
+          status: string
+          updated_at: string
+          years_experience: number | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          availability?: string | null
+          city?: string | null
+          created_at?: string
+          desired_pay?: string | null
+          email?: string | null
+          follows_code?: boolean | null
+          full_name: string
+          has_experience?: boolean | null
+          has_tools?: boolean | null
+          has_transport?: boolean | null
+          id?: string
+          is_licensed?: boolean | null
+          notes?: string | null
+          phone: string
+          photo_urls?: string[] | null
+          skills?: string[] | null
+          status?: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Update: {
+          admin_notes?: string | null
+          availability?: string | null
+          city?: string | null
+          created_at?: string
+          desired_pay?: string | null
+          email?: string | null
+          follows_code?: boolean | null
+          full_name?: string
+          has_experience?: boolean | null
+          has_tools?: boolean | null
+          has_transport?: boolean | null
+          id?: string
+          is_licensed?: boolean | null
+          notes?: string | null
+          phone?: string
+          photo_urls?: string[] | null
+          skills?: string[] | null
+          status?: string
+          updated_at?: string
+          years_experience?: number | null
+        }
+        Relationships: []
       }
       job_materials: {
         Row: {
@@ -383,6 +470,8 @@ export type Database = {
           preferred_date: string | null
           preferred_time_window: string | null
           priority: number | null
+          review_requested: boolean
+          review_requested_at: string | null
           scheduled_end: string | null
           scheduled_start: string | null
           state: string | null
@@ -442,6 +531,8 @@ export type Database = {
           preferred_date?: string | null
           preferred_time_window?: string | null
           priority?: number | null
+          review_requested?: boolean
+          review_requested_at?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           state?: string | null
@@ -501,6 +592,8 @@ export type Database = {
           preferred_date?: string | null
           preferred_time_window?: string | null
           priority?: number | null
+          review_requested?: boolean
+          review_requested_at?: string | null
           scheduled_end?: string | null
           scheduled_start?: string | null
           state?: string | null
@@ -645,6 +738,7 @@ export type Database = {
           created_at: string
           customer_id: string | null
           customer_name: string | null
+          featured: boolean
           id: string
           job_id: string | null
           neighborhood: string | null
@@ -663,6 +757,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
+          featured?: boolean
           id?: string
           job_id?: string | null
           neighborhood?: string | null
@@ -681,6 +776,7 @@ export type Database = {
           created_at?: string
           customer_id?: string | null
           customer_name?: string | null
+          featured?: boolean
           id?: string
           job_id?: string | null
           neighborhood?: string | null

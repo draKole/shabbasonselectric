@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSeo } from "@/lib/seo";
 import { BUSINESS } from "@/lib/business";
 import { Star } from "lucide-react";
+import { GoogleReviewButton } from "@/components/GoogleReviewButton";
 
 export default function Reviews() {
   useSeo({
@@ -29,9 +29,7 @@ export default function Reviews() {
       <p className="mt-3 text-muted-foreground max-w-2xl">What our customers say about working with us.</p>
 
       <div className="mt-6">
-        <a href={BUSINESS.googleReviewUrl} target="_blank" rel="noreferrer">
-          <Button className="bg-success text-success-foreground hover:bg-success/90">Leave a Google Review</Button>
-        </a>
+        <GoogleReviewButton className="bg-success text-success-foreground hover:bg-success/90" />
       </div>
 
       <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

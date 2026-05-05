@@ -63,6 +63,7 @@ export default function Home() {
       .from("reviews")
       .select("*")
       .eq("public_visible", true)
+      .eq("featured", true)
       .order("created_at", { ascending: false })
       .limit(3)
       .then(({ data }) => setReviews(data || []));
@@ -234,6 +235,9 @@ export default function Home() {
                 <Calendar className="h-5 w-5" /> Schedule Service
               </Button>
             </Link>
+          </div>
+          <div className="mt-6 text-sm opacity-90">
+            Looking for work? <Link to="/careers" className="underline font-semibold">Apply here</Link>
           </div>
         </div>
       </section>
