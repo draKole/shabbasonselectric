@@ -35,8 +35,30 @@ export default function AdminDashboard() {
         openBalance: (bal || []).reduce((s, j: any) => s + Number(j.balance_due || 0), 0),
       });
       setRecent(rec || []);
+      const { data: fu } = await supabase
+        .from("jobs")
+        .select("id, status, updated_at, job_type, customers(name, phone)")
+        .in("status", ["completed", "paid"])
+        .eq("review_requested", false)
+        .order("updated_at", { ascending: false })
+        .limit(20);
+      setFollowUps((fu || []).filter((j: any) => j.customers?.phone));
     })();
   }, []);
+
+  function reviewText(name?: string) {
+    return `Thank you for choosing Shabba & Sons Electric${name ? `, ${name}` : ""}. If you were happy with the work, I'd really appreciate a quick Google review. It helps my family business grow. ${googleUrl || "[Google Review Link]"}`;
+  }
+  async function copyText(name?: string) {
+    await navigator.clipboard.writeText(reviewText(name));
+    toast.success("Copied review request");
+  }
+  async function markRequested(id: string) {
+    const { error } = await supabase.from("jobs").update({ review_requested: true, review_requested_at: new Date().toISOString() } as any).eq("id", id);
+    if (error) return toast.error(error.message);
+    setFollowUps((prev) => prev.filter((j) => j.id !== id));
+    toast.success("Marked as requested");
+  }
 
   const cards = [
     { label: "New leads (week)", value: stats.newLeads, icon: Briefcase, color: "text-secondary" },
