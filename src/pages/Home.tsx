@@ -236,6 +236,9 @@ export default function Home() {
               </Button>
             </Link>
           </div>
+          <div className="mt-6 text-sm opacity-90">
+            Looking for work? <Link to="/careers" className="underline font-semibold">Apply here</Link>
+          </div>
         </div>
       </section>
     </>
