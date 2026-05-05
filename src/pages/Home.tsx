@@ -63,6 +63,7 @@ export default function Home() {
       .from("reviews")
       .select("*")
       .eq("public_visible", true)
+      .eq("featured", true)
       .order("created_at", { ascending: false })
       .limit(3)
       .then(({ data }) => setReviews(data || []));
