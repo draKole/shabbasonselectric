@@ -9,11 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { JOB_STATUS_LABELS, JOB_TYPE_LABELS, STATUS_COLOR, PAYMENT_STATUS_LABELS, STATUS_HELP } from "@/lib/jobTypes";
-import { Phone, MessageSquare, CalendarPlus, Download, Star, ArrowLeft } from "lucide-react";
+import { Phone, MessageSquare, CalendarPlus, Download, Star, ArrowLeft, Archive, ArchiveRestore } from "lucide-react";
 import JobMaterials from "@/components/admin/JobMaterials";
 import JobPayments from "@/components/admin/JobPayments";
 import JobHourly from "@/components/admin/JobHourly";
 import JobWorkerHours from "@/components/admin/JobWorkerHours";
+import JobTasks from "@/components/admin/JobTasks";
 import { toast } from "sonner";
 import { BUSINESS, telHref, smsHref } from "@/lib/business";
 
@@ -119,6 +120,9 @@ export default function AdminJobDetails() {
             <a href={`sms:${customer?.phone || BUSINESS.phoneDigits}?&body=${encodeURIComponent(reviewMsg)}`}>
               <Button size="sm" variant="outline" className="gap-1"><Star className="h-4 w-4" />Review</Button>
             </a>
+            <Button size="sm" variant="outline" className="gap-1" onClick={() => update({ archived: !job.archived })}>
+              {job.archived ? <><ArchiveRestore className="h-4 w-4" />Restore</> : <><Archive className="h-4 w-4" />Archive</>}
+            </Button>
           </div>
         </div>
       </Card>
@@ -209,6 +213,7 @@ export default function AdminJobDetails() {
         <JobMaterials jobId={job.id} />
         <JobWorkerHours jobId={job.id} />
         <JobHourly job={job} update={update} />
+        <JobTasks jobId={job.id} />
       </div>
 
       {photos.length > 0 && (
