@@ -13,6 +13,7 @@ import { Phone, MessageSquare, CalendarPlus, Download, Star, ArrowLeft } from "l
 import JobMaterials from "@/components/admin/JobMaterials";
 import JobPayments from "@/components/admin/JobPayments";
 import JobHourly from "@/components/admin/JobHourly";
+import JobWorkerHours from "@/components/admin/JobWorkerHours";
 import { toast } from "sonner";
 import { BUSINESS, telHref, smsHref } from "@/lib/business";
 
