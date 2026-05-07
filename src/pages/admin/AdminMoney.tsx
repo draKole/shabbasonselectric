@@ -105,7 +105,7 @@ export default function AdminMoney() {
           <div><div className="text-muted-foreground">Materials</div><div className="text-lg font-bold">{fmt(ytd.materialsMe)}</div></div>
           <div><div className="text-muted-foreground">Worker labor</div><div className="text-lg font-bold">{fmt(ytd.workerLabor)}</div></div>
           <div><div className="text-muted-foreground">Other exp.</div><div className="text-lg font-bold">{fmt(ytd.otherExp)}</div></div>
-          <div><div className="text-muted-foreground">Net Profit</div><div className="text-lg font-bold text-success">{fmt(ytd.net)}</div></div>
+          <div><div className="text-muted-foreground">Net Profit</div><div className="text-lg font-bold text-success">{fmt(ytd.netProfit)}</div></div>
         </div>
       </Card>
 
