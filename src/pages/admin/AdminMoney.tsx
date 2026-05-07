@@ -60,7 +60,7 @@ export default function AdminMoney() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Stat icon={<DollarSign className="h-5 w-5" />} label="Gross collected" value={fmt(monthData.collected)} sub={`${monthData.count} payments`} />
+        <Stat icon={<DollarSign className="h-5 w-5" />} label="Gross collected" value={fmt(monthData.collected)} sub={`${monthData.paymentCount} payments`} />
         <Stat icon={<Receipt className="h-5 w-5" />} label="Materials (me)" value={fmt(monthData.materialsMe)} sub="Subtracted" />
         <Stat icon={<Users className="h-5 w-5" />} label="Worker labor" value={fmt(monthData.workerLabor)} sub="Subtracted" />
         <Stat icon={<Receipt className="h-5 w-5" />} label="Other expenses" value={fmt(monthData.otherExp)} sub="Subtracted" />
