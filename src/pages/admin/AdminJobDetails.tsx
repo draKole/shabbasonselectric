@@ -207,6 +207,7 @@ export default function AdminJobDetails() {
       <div className="grid gap-4 lg:grid-cols-2">
         <JobPayments jobId={job.id} jobTotal={Number(job.job_total || job.estimate_amount || 0)} amountPaid={Number(job.amount_paid || 0)} balance={Number(job.balance_due || 0)} />
         <JobMaterials jobId={job.id} />
+        <JobWorkerHours jobId={job.id} />
         <JobHourly job={job} update={update} />
       </div>
 
