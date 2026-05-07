@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check, TrendingUp, Receipt, Users } from "lucide-react";
 import { useAppSetting } from "@/lib/useAppSettings";
+import { useMonthMoney, monthRange } from "@/lib/useMonthMoney";
+import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
