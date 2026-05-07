@@ -352,6 +352,7 @@ export type Database = {
           materials_included: boolean | null
           scope: string | null
           sent_at: string | null
+          share_token: string | null
           status: string | null
           terms: string | null
           total_price: number | null
@@ -369,6 +370,7 @@ export type Database = {
           materials_included?: boolean | null
           scope?: string | null
           sent_at?: string | null
+          share_token?: string | null
           status?: string | null
           terms?: string | null
           total_price?: number | null
@@ -386,6 +388,7 @@ export type Database = {
           materials_included?: boolean | null
           scope?: string | null
           sent_at?: string | null
+          share_token?: string | null
           status?: string | null
           terms?: string | null
           total_price?: number | null
@@ -585,6 +588,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          display_order: number
+          due_date: string | null
+          id: string
+          job_id: string
+          notes: string | null
+          status: string
+          title: string
+          updated_at: string
+          worker_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          display_order?: number
+          due_date?: string | null
+          id?: string
+          job_id: string
+          notes?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          display_order?: number
+          due_date?: string | null
+          id?: string
+          job_id?: string
+          notes?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          worker_id?: string | null
+        }
+        Relationships: []
       }
       job_timeline_events: {
         Row: {
@@ -1152,6 +1197,7 @@ export type Database = {
     }
     Functions: {
       claim_first_admin: { Args: never; Returns: boolean }
+      get_estimate_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
