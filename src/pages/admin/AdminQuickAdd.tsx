@@ -13,7 +13,10 @@ import { toast } from "sonner";
 
 export default function AdminQuickAdd() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const customerId = params.get("customer_id");
   const [busy, setBusy] = useState(false);
+  const [existingCustomer, setExistingCustomer] = useState<any>(null);
   const [v, setV] = useState({
     name: "", phone: "", address: "", city: "Columbus",
     job_type: "electrical_repair", status: "scheduled",
@@ -26,6 +29,17 @@ export default function AdminQuickAdd() {
     estimated_hours: "", actual_hours: "", hourly_rate: "125",
     review_requested: false,
   });
+
+  useEffect(() => {
+    if (!customerId) return;
+    import("@/integrations/supabase/client").then(({ supabase }) =>
+      supabase.from("customers").select("*").eq("id", customerId).single().then(({ data }) => {
+        if (!data) return;
+        setExistingCustomer(data);
+        setV((cur) => ({ ...cur, name: data.name || "", phone: data.phone || "", address: data.address || "", city: data.city || cur.city }));
+      })
+    );
+  }, [customerId]);
 
   const total = Number(v.job_total || 0);
   const paid = Number(v.amount_paid || 0);
