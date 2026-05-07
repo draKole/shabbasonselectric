@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      allocation_presets: {
+        Row: {
+          buckets: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          buckets?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          buckets?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -29,6 +56,54 @@ export type Database = {
           key?: string
           updated_at?: string
           value?: string | null
+        }
+        Relationships: []
+      }
+      bills: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          due_date: string | null
+          id: string
+          name: string
+          notes: string | null
+          paid: boolean
+          paid_on: string | null
+          priority: string
+          recurring: boolean
+          recurring_frequency: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          paid?: boolean
+          paid_on?: string | null
+          priority?: string
+          recurring?: boolean
+          recurring_frequency?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          paid?: boolean
+          paid_on?: string | null
+          priority?: string
+          recurring?: boolean
+          recurring_frequency?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -133,6 +208,92 @@ export type Database = {
           state?: string | null
           updated_at?: string
           zip?: string | null
+        }
+        Relationships: []
+      }
+      debt_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          debt_id: string
+          id: string
+          method: string
+          notes: string | null
+          paid_on: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          debt_id: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_on?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          debt_id?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debt_payments_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "debts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debts: {
+        Row: {
+          created_at: string
+          current_balance: number
+          debt_type: string
+          due_date: string | null
+          id: string
+          interest_rate: number | null
+          minimum_payment: number
+          name: string
+          notes: string | null
+          paid_off: boolean
+          priority: string
+          starting_balance: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_balance?: number
+          debt_type?: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          minimum_payment?: number
+          name: string
+          notes?: string | null
+          paid_off?: boolean
+          priority?: string
+          starting_balance?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_balance?: number
+          debt_type?: string
+          due_date?: string | null
+          id?: string
+          interest_rate?: number | null
+          minimum_payment?: number
+          name?: string
+          notes?: string | null
+          paid_off?: boolean
+          priority?: string
+          starting_balance?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -461,6 +622,7 @@ export type Database = {
           last_contact: string | null
           materials_cost: number | null
           materials_needed: string | null
+          other_expenses: number
           payment_notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"] | null
           permit_needed: Database["public"]["Enums"]["permit_status"] | null
@@ -480,6 +642,7 @@ export type Database = {
           urgency: Database["public"]["Enums"]["urgency_level"] | null
           wants_ballpark: boolean | null
           wants_free_estimate: boolean | null
+          worker_labor_cost: number
           zip: string | null
         }
         Insert: {
@@ -522,6 +685,7 @@ export type Database = {
           last_contact?: string | null
           materials_cost?: number | null
           materials_needed?: string | null
+          other_expenses?: number
           payment_notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           permit_needed?: Database["public"]["Enums"]["permit_status"] | null
@@ -541,6 +705,7 @@ export type Database = {
           urgency?: Database["public"]["Enums"]["urgency_level"] | null
           wants_ballpark?: boolean | null
           wants_free_estimate?: boolean | null
+          worker_labor_cost?: number
           zip?: string | null
         }
         Update: {
@@ -583,6 +748,7 @@ export type Database = {
           last_contact?: string | null
           materials_cost?: number | null
           materials_needed?: string | null
+          other_expenses?: number
           payment_notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"] | null
           permit_needed?: Database["public"]["Enums"]["permit_status"] | null
@@ -602,6 +768,7 @@ export type Database = {
           urgency?: Database["public"]["Enums"]["urgency_level"] | null
           wants_ballpark?: boolean | null
           wants_free_estimate?: boolean | null
+          worker_labor_cost?: number
           zip?: string | null
         }
         Relationships: [
@@ -842,6 +1009,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      recompute_debt_balance: { Args: { _debt_id: string }; Returns: undefined }
       recompute_job_totals: { Args: { _job_id: string }; Returns: undefined }
     }
     Enums: {
