@@ -14,6 +14,10 @@ export default function AdminDashboard() {
   const [recent, setRecent] = useState<any[]>([]);
   const [followUps, setFollowUps] = useState<any[]>([]);
   const { value: googleUrl } = useAppSetting("google_review_url");
+  const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
+  const mr = useMemo(() => monthRange(monthKey), [monthKey]);
+  const money = useMonthMoney(mr.from, mr.to);
+  const { active: activePreset } = useAllocationPresets();
 
 
   useEffect(() => {
