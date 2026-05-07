@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check, TrendingUp, Receipt, Users } from "lucide-react";
 import { useAppSetting } from "@/lib/useAppSettings";
+import { useMonthMoney, monthRange } from "@/lib/useMonthMoney";
+import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -12,6 +14,10 @@ export default function AdminDashboard() {
   const [recent, setRecent] = useState<any[]>([]);
   const [followUps, setFollowUps] = useState<any[]>([]);
   const { value: googleUrl } = useAppSetting("google_review_url");
+  const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
+  const mr = useMemo(() => monthRange(monthKey), [monthKey]);
+  const money = useMonthMoney(mr.from, mr.to);
+  const { active: activePreset } = useAllocationPresets();
 
 
   useEffect(() => {
@@ -85,6 +91,36 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold flex items-center gap-2"><TrendingUp className="h-4 w-4 text-success" /> Money this month</h2>
+          <Link to="/admin/money" className="text-xs underline text-muted-foreground">Open Money Tracker →</Link>
+        </div>
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+          <MoneyMini icon={<DollarSign className="h-4 w-4" />} label="Gross collected" value={`$${money.collected.toFixed(0)}`} />
+          <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Materials (me)" value={`$${money.materialsMe.toFixed(0)}`} />
+          <MoneyMini icon={<Users className="h-4 w-4" />} label="Worker labor" value={`$${money.workerLabor.toFixed(0)}`} />
+          <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Other expenses" value={`$${money.otherExp.toFixed(0)}`} />
+          <MoneyMini icon={<TrendingUp className="h-4 w-4" />} label="NET PROFIT" value={`$${money.netProfit.toFixed(0)}`} highlight />
+        </div>
+        {money.netProfit > 0 && activePreset && (
+          <div className="mt-3">
+            <div className="text-xs text-muted-foreground mb-1">Allocation: {activePreset.name}</div>
+            <div className="grid gap-2 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+              {activePreset.buckets.filter((b: any) => b.enabled !== false).map((b: any, i: number) => (
+                <div key={i} className={`rounded-md p-2 text-xs ${bucketColorClass(b.color)}`}>
+                  <div className="font-semibold">{b.name} ({b.percent}%)</div>
+                  <div className="text-base font-extrabold">${(money.netProfit * (Number(b.percent) || 0) / 100).toFixed(0)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {money.netProfit === 0 && !money.loading && (
+          <div className="mt-3 text-xs text-muted-foreground">No net profit yet this month — allocations only apply to take-home.</div>
+        )}
+      </Card>
+
       <Card className="p-4 bg-muted/40 border-secondary/30">
         <h2 className="font-bold mb-2">How leads & money work</h2>
         <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1 text-sm">
@@ -154,6 +190,15 @@ export default function AdminDashboard() {
           {recent.length === 0 && <div className="text-sm text-muted-foreground p-3">No jobs yet. Submit a test lead from the Schedule page.</div>}
         </div>
       </Card>
+    </div>
+  );
+}
+
+function MoneyMini({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-md p-3 border ${highlight ? "bg-success/5 border-success/40" : "bg-muted/40 border-border"}`}>
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">{icon}{label}</div>
+      <div className={`text-xl font-extrabold mt-0.5 ${highlight ? "text-success" : ""}`}>{value}</div>
     </div>
   );
 }

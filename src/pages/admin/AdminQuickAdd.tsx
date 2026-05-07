@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,10 @@ import { toast } from "sonner";
 
 export default function AdminQuickAdd() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const customerId = params.get("customer_id");
   const [busy, setBusy] = useState(false);
+  const [existingCustomer, setExistingCustomer] = useState<any>(null);
   const [v, setV] = useState({
     name: "", phone: "", address: "", city: "Columbus",
     job_type: "electrical_repair", status: "scheduled",
@@ -27,6 +30,17 @@ export default function AdminQuickAdd() {
     review_requested: false,
   });
 
+  useEffect(() => {
+    if (!customerId) return;
+    import("@/integrations/supabase/client").then(({ supabase }) =>
+      supabase.from("customers").select("*").eq("id", customerId).single().then(({ data }) => {
+        if (!data) return;
+        setExistingCustomer(data);
+        setV((cur) => ({ ...cur, name: data.name || "", phone: data.phone || "", address: data.address || "", city: data.city || cur.city }));
+      })
+    );
+  }, [customerId]);
+
   const total = Number(v.job_total || 0);
   const paid = Number(v.amount_paid || 0);
   const matCost = Number(v.materials_cost || 0);
@@ -37,13 +51,17 @@ export default function AdminQuickAdd() {
     e.preventDefault();
     setBusy(true);
     try {
-      const { data: c, error: ce } = await supabase.from("customers").insert({
-        name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
-      }).select().single();
-      if (ce) throw ce;
+      let cId = existingCustomer?.id;
+      if (!cId) {
+        const { data: c, error: ce } = await supabase.from("customers").insert({
+          name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
+        }).select().single();
+        if (ce) throw ce;
+        cId = c.id;
+      }
 
       const { data: j, error: je } = await supabase.from("jobs").insert({
-        customer_id: c.id,
+        customer_id: cId,
         job_type: v.job_type as any,
         status: v.status as any,
         address: v.address || null,
@@ -84,6 +102,11 @@ export default function AdminQuickAdd() {
   return (
     <div className="container-tight py-6 max-w-2xl">
       <h1 className="text-2xl font-extrabold mb-4">Quick Add Job</h1>
+      {existingCustomer && (
+        <div className="mb-3 text-sm rounded-md bg-success/10 border border-success/30 p-3">
+          Adding job for existing contact: <b>{existingCustomer.name}</b>
+        </div>
+      )}
       <form onSubmit={save}>
         <Card className="p-5 space-y-4">
           <div className="grid sm:grid-cols-2 gap-3">
