@@ -18,7 +18,7 @@ const NAV = [
   { to: "/admin/bills", label: "Bills", icon: Receipt },
   { to: "/admin/debt", label: "Debt", icon: CreditCard },
   { to: "/admin/workers", label: "Workers", icon: HardHat },
-  { to: "/admin/messages", label: "Messages", icon: MessageSquare },
+  // Messages tab removed per request
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },
   { to: "/admin/applications", label: "Applications", icon: Users },
