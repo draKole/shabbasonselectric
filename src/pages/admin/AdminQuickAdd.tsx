@@ -51,13 +51,17 @@ export default function AdminQuickAdd() {
     e.preventDefault();
     setBusy(true);
     try {
-      const { data: c, error: ce } = await supabase.from("customers").insert({
-        name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
-      }).select().single();
-      if (ce) throw ce;
+      let cId = existingCustomer?.id;
+      if (!cId) {
+        const { data: c, error: ce } = await supabase.from("customers").insert({
+          name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
+        }).select().single();
+        if (ce) throw ce;
+        cId = c.id;
+      }
 
       const { data: j, error: je } = await supabase.from("jobs").insert({
-        customer_id: c.id,
+        customer_id: cId,
         job_type: v.job_type as any,
         status: v.status as any,
         address: v.address || null,
