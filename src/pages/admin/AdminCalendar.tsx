@@ -7,7 +7,11 @@ import { JOB_TYPE_LABELS, STATUS_COLOR, JOB_STATUS_LABELS } from "@/lib/jobTypes
 export default function AdminCalendar() {
   const [jobs, setJobs] = useState<any[]>([]);
   useEffect(() => {
-    supabase.from("jobs").select("*, customers(name, phone)").not("scheduled_start", "is", null).order("scheduled_start")
+    supabase.from("jobs").select("*, customers(name, phone)")
+      .not("scheduled_start", "is", null)
+      .eq("archived", false)
+      .not("status", "in", "(completed,paid,cancelled,lost_lead)")
+      .order("scheduled_start")
       .then(({ data }) => setJobs(data || []));
   }, []);
 

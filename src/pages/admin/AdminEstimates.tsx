@@ -10,14 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Copy, MessageSquare, Save } from "lucide-react";
 import { BUSINESS } from "@/lib/business";
-import { ESTIMATE_TEMPLATES } from "@/lib/estimateTemplates";
-
 type JobOpt = { id: string; address: string | null; customer: { name: string; phone: string | null } | null };
 
 export default function AdminEstimates() {
   const [params] = useSearchParams();
   const initialJobId = params.get("job") || "";
   const [jobs, setJobs] = useState<JobOpt[]>([]);
+  const [templates, setTemplates] = useState<any[]>([]);
   const [jobId, setJobId] = useState<string>(initialJobId);
   const [v, setV] = useState({ name: "", address: "", scope: "", total: "", deposit: "", materials: "Included" });
   const [phone, setPhone] = useState("");
@@ -25,18 +24,17 @@ export default function AdminEstimates() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase
-        .from("jobs")
-        .select("id, address, customer:customers(name, phone)")
-        .eq("archived", false)
-        .order("created_at", { ascending: false })
-        .limit(50);
+      const [{ data }, { data: tpl }] = await Promise.all([
+        supabase.from("jobs").select("id, address, customer:customers(name, phone)").eq("archived", false).order("created_at", { ascending: false }).limit(50),
+        supabase.from("estimate_templates").select("*").eq("active", true).order("display_order"),
+      ]);
       setJobs((data as any) || []);
+      setTemplates(tpl || []);
     })();
   }, []);
 
   function applyTemplate(id: string) {
-    const t = ESTIMATE_TEMPLATES.find((x) => x.id === id);
+    const t = templates.find((x) => x.id === id);
     if (!t) return;
     setV((cur) => ({
       ...cur,
@@ -128,7 +126,7 @@ ${BUSINESS.phone}`;
           <Select onValueChange={applyTemplate}>
             <SelectTrigger><SelectValue placeholder="Pick a template to add…" /></SelectTrigger>
             <SelectContent>
-              {ESTIMATE_TEMPLATES.map((t) => (
+              {templates.map((t) => (
                 <SelectItem key={t.id} value={t.id}>{t.label} · ${t.total}</SelectItem>
               ))}
             </SelectContent>
