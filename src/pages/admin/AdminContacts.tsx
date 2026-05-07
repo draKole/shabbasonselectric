@@ -68,7 +68,7 @@ export default function AdminContacts() {
         {filtered.map((g) => (
           <Card key={g.key} className="p-4">
             <div className="flex flex-wrap justify-between gap-2">
-              <div className="min-w-0">
+              <Link to={`/admin/contacts/${g.primary.id}`} className="min-w-0 hover:underline">
                 <div className="font-bold">{g.primary.name}</div>
                 <div className="text-xs text-muted-foreground flex flex-wrap gap-x-3 gap-y-0.5">
                   {g.primary.phone && <span>{g.primary.phone}</span>}
