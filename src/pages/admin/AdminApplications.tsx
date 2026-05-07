@@ -108,10 +108,19 @@ export default function AdminApplications() {
                 <div><b>Availability:</b> {a.availability || "—"}</div>
                 <div><b>Desired pay:</b> {a.desired_pay || "—"}</div>
                 {a.notes && <div><b>Notes:</b> {a.notes}</div>}
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-2 pt-2 flex-wrap">
                   <Button asChild size="sm" variant="outline"><a href={`tel:${a.phone}`}>Call</a></Button>
                   <Button asChild size="sm" variant="outline"><a href={`sms:${a.phone}`}>Text</a></Button>
                   {a.email && <Button asChild size="sm" variant="outline"><a href={`mailto:${a.email}`}>Email</a></Button>}
+                  {a.converted_worker_id ? (
+                    <Button size="sm" variant="outline" className="gap-1" onClick={() => navigate("/admin/workers")}>
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Converted — open Workers
+                    </Button>
+                  ) : (
+                    <Button size="sm" className="gap-1 bg-success text-success-foreground hover:bg-success/90" onClick={() => convertToWorker(a)}>
+                      <UserPlus className="h-3.5 w-3.5" /> Convert to Worker
+                    </Button>
+                  )}
                 </div>
                 <div>
                   <div className="text-xs font-semibold mb-1">Admin notes</div>
