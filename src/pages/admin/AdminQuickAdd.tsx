@@ -102,6 +102,11 @@ export default function AdminQuickAdd() {
   return (
     <div className="container-tight py-6 max-w-2xl">
       <h1 className="text-2xl font-extrabold mb-4">Quick Add Job</h1>
+      {existingCustomer && (
+        <div className="mb-3 text-sm rounded-md bg-success/10 border border-success/30 p-3">
+          Adding job for existing contact: <b>{existingCustomer.name}</b>
+        </div>
+      )}
       <form onSubmit={save}>
         <Card className="p-5 space-y-4">
           <div className="grid sm:grid-cols-2 gap-3">
