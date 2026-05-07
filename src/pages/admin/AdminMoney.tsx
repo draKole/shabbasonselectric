@@ -2,80 +2,45 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, TrendingUp, Receipt, Wallet, Info, Users } from "lucide-react";
+import { DollarSign, TrendingUp, Receipt, Info, Users } from "lucide-react";
 import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
+import { useMonthMoney, monthRange, yearRange } from "@/lib/useMonthMoney";
 import { Link } from "react-router-dom";
 
-type Payment = { id: string; amount: number; paid_on: string; method: string; is_deposit: boolean; job_id: string };
-type Material = { id: string; cost: number; purchased_on: string; paid_by: string; job_id: string };
-type JobExp = { id: string; other_expenses: number; worker_labor_cost: number; updated_at: string };
+type Payment = { id: string; amount: number; paid_on: string; method: string; is_deposit: boolean };
 
-function monthKey(d: string) { return d.slice(0, 7); }
 function fmt(n: number) { return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }); }
 
 export default function AdminMoney() {
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [jobs, setJobs] = useState<JobExp[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [recent, setRecent] = useState<Payment[]>([]);
   const [month, setMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
   const { presets, active } = useAllocationPresets();
   const [presetId, setPresetId] = useState<string | null>(null);
-
   useEffect(() => { if (active && !presetId) setPresetId(active.id); }, [active, presetId]);
 
   useEffect(() => {
-    (async () => {
-      const [{ data: p }, { data: m }, { data: j }] = await Promise.all([
-        supabase.from("job_payments").select("id, amount, paid_on, method, is_deposit, job_id").order("paid_on", { ascending: false }),
-        supabase.from("job_materials").select("id, cost, purchased_on, paid_by, job_id"),
-        supabase.from("jobs").select("id, other_expenses, worker_labor_cost, updated_at"),
-      ]);
-      setPayments((p as any) || []);
-      setMaterials((m as any) || []);
-      setJobs((j as any) || []);
-      setLoading(false);
-    })();
+    supabase.from("job_payments").select("id, amount, paid_on, method, is_deposit")
+      .order("paid_on", { ascending: false }).limit(15)
+      .then(({ data }) => setRecent((data as any) || []));
   }, []);
 
+  const mr = monthRange(month);
+  const yr = yearRange(month.slice(0, 4));
+  const monthData = useMonthMoney(mr.from, mr.to);
+  const ytd = useMonthMoney(yr.from, yr.to);
+
   const months = useMemo(() => {
-    const set = new Set<string>();
-    payments.forEach((p) => set.add(monthKey(p.paid_on)));
-    materials.forEach((m) => set.add(monthKey(m.purchased_on)));
-    set.add(month);
-    return Array.from(set).sort().reverse();
-  }, [payments, materials, month]);
-
-  const monthData = useMemo(() => {
-    const pInMonth = payments.filter((p) => monthKey(p.paid_on) === month);
-    const mInMonth = materials.filter((m) => monthKey(m.purchased_on) === month);
-    const collected = pInMonth.reduce((s, p) => s + Number(p.amount || 0), 0);
-    const materialsMe = mInMonth.filter((m) => m.paid_by === "me").reduce((s, m) => s + Number(m.cost || 0), 0);
-    // Approximate worker labor + other expenses by jobs that had payments in this month
-    const activeJobIds = new Set(pInMonth.map((p) => p.job_id));
-    const expJobs = jobs.filter((j) => activeJobIds.has(j.id));
-    const workerLabor = expJobs.reduce((s, j) => s + Number(j.worker_labor_cost || 0), 0);
-    const otherExp = expJobs.reduce((s, j) => s + Number(j.other_expenses || 0), 0);
-    const netProfit = Math.max(collected - materialsMe - workerLabor - otherExp, 0);
-    return { collected, materialsMe, workerLabor, otherExp, netProfit, count: pInMonth.length };
-  }, [payments, materials, jobs, month]);
-
-  const ytd = useMemo(() => {
-    const year = month.slice(0, 4);
-    const yp = payments.filter((p) => p.paid_on.startsWith(year));
-    const collected = yp.reduce((s, p) => s + Number(p.amount || 0), 0);
-    const materialsMe = materials.filter((m) => m.purchased_on.startsWith(year) && m.paid_by === "me").reduce((s, m) => s + Number(m.cost || 0), 0);
-    const ids = new Set(yp.map((p) => p.job_id));
-    const expJobs = jobs.filter((j) => ids.has(j.id));
-    const workerLabor = expJobs.reduce((s, j) => s + Number(j.worker_labor_cost || 0), 0);
-    const otherExp = expJobs.reduce((s, j) => s + Number(j.other_expenses || 0), 0);
-    const net = Math.max(collected - materialsMe - workerLabor - otherExp, 0);
-    return { collected, materialsMe, workerLabor, otherExp, net };
-  }, [payments, materials, jobs, month]);
+    const arr: string[] = [];
+    const now = new Date();
+    for (let i = 0; i < 18; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      arr.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`);
+    }
+    if (!arr.includes(month)) arr.unshift(month);
+    return arr;
+  }, [month]);
 
   const selectedPreset = presets.find((p) => p.id === presetId) || active;
-
-  if (loading) return <div className="container-tight py-6 text-sm text-muted-foreground">Loading…</div>;
 
   return (
     <div className="container-tight py-6 space-y-4">
