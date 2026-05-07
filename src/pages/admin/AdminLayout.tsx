@@ -1,7 +1,7 @@
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, MessageSquare, DollarSign, Users, Settings, Receipt, CreditCard } from "lucide-react";
+import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, MessageSquare, DollarSign, Users, Settings, Receipt, CreditCard, BookUser, HardHat, ClipboardList } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BUSINESS } from "@/lib/business";
 
@@ -10,10 +10,13 @@ const NAV = [
   { to: "/admin/jobs", label: "Jobs", icon: Briefcase },
   { to: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
   { to: "/admin/calendar", label: "Calendar", icon: Calendar },
+  { to: "/admin/contacts", label: "Contacts", icon: BookUser },
   { to: "/admin/estimates", label: "Estimates", icon: FileText },
+  { to: "/admin/templates", label: "Templates", icon: ClipboardList },
   { to: "/admin/money", label: "Money", icon: DollarSign },
   { to: "/admin/bills", label: "Bills", icon: Receipt },
   { to: "/admin/debt", label: "Debt", icon: CreditCard },
+  { to: "/admin/workers", label: "Workers", icon: HardHat },
   { to: "/admin/messages", label: "Messages", icon: MessageSquare },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },

@@ -32,6 +32,9 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminApplications from "./pages/admin/AdminApplications";
 import AdminBills from "./pages/admin/AdminBills";
 import AdminDebt from "./pages/admin/AdminDebt";
+import AdminContacts from "./pages/admin/AdminContacts";
+import AdminWorkers from "./pages/admin/AdminWorkers";
+import AdminTemplates from "./pages/admin/AdminTemplates";
 import Careers from "./pages/Careers";
 
 const queryClient = new QueryClient();
@@ -71,6 +74,9 @@ const App = () => (
               <Route path="applications" element={<AdminApplications />} />
               <Route path="bills" element={<AdminBills />} />
               <Route path="debt" element={<AdminDebt />} />
+              <Route path="contacts" element={<AdminContacts />} />
+              <Route path="workers" element={<AdminWorkers />} />
+              <Route path="templates" element={<AdminTemplates />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="setup" element={<AdminSetup />} />
             </Route>
