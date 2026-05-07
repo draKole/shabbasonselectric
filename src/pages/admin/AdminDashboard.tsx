@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check, TrendingUp, Receipt, Users } from "lucide-react";
+import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check, TrendingUp, Receipt, Users, ListChecks } from "lucide-react";
 import { useAppSetting } from "@/lib/useAppSettings";
 import { useMonthMoney, monthRange } from "@/lib/useMonthMoney";
 import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
@@ -13,6 +13,7 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState({ newLeads: 0, scheduled: 0, completed: 0, openEst: 0, reviewsNeeded: 0, openBalance: 0 });
   const [recent, setRecent] = useState<any[]>([]);
   const [followUps, setFollowUps] = useState<any[]>([]);
+  const [todayTasks, setTodayTasks] = useState<any[]>([]);
   const { value: googleUrl } = useAppSetting("google_review_url");
   const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
   const mr = useMemo(() => monthRange(monthKey), [monthKey]);
@@ -49,8 +50,22 @@ export default function AdminDashboard() {
         .order("updated_at", { ascending: false })
         .limit(20);
       setFollowUps((fu || []).filter((j: any) => j.customers?.phone));
+      const today = new Date().toISOString().slice(0, 10);
+      const { data: tasks } = await supabase
+        .from("job_tasks")
+        .select("id, title, status, due_date, job_id, jobs(customers(name))")
+        .neq("status", "done")
+        .or(`due_date.lte.${today},due_date.is.null`)
+        .order("due_date", { ascending: true })
+        .limit(15);
+      setTodayTasks(tasks || []);
     })();
   }, []);
+
+  async function completeTask(id: string) {
+    const { error } = await supabase.from("job_tasks").update({ status: "done", completed_at: new Date().toISOString() }).eq("id", id);
+    if (error) return toast.error(error.message);
+    setTodayTasks((prev) => prev.filter((t) => t.id !== id));
 
   function reviewText(name?: string) {
     return `Thank you for choosing Shabba & Sons Electric${name ? `, ${name}` : ""}. If you were happy with the work, I'd really appreciate a quick Google review. It helps my family business grow. ${googleUrl || "[Google Review Link]"}`;
