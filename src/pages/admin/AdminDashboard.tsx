@@ -193,3 +193,12 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+function MoneyMini({ icon, label, value, highlight }: { icon: React.ReactNode; label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className={`rounded-md p-3 border ${highlight ? "bg-success/5 border-success/40" : "bg-muted/40 border-border"}`}>
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">{icon}{label}</div>
+      <div className={`text-xl font-extrabold mt-0.5 ${highlight ? "text-success" : ""}`}>{value}</div>
+    </div>
+  );
+}
