@@ -112,7 +112,7 @@ export default function AdminMoney() {
       <Card className="p-5">
         <h2 className="font-bold mb-3">Recent Payments</h2>
         <div className="space-y-2 text-sm">
-          {payments.slice(0, 15).map((p) => (
+          {recent.map((p) => (
             <div key={p.id} className="flex items-center justify-between border-b border-border py-2">
               <div>
                 <div className="font-semibold">{fmt(Number(p.amount))} {p.is_deposit && <span className="ml-1 text-xs text-secondary">deposit</span>}</div>
@@ -120,7 +120,7 @@ export default function AdminMoney() {
               </div>
             </div>
           ))}
-          {payments.length === 0 && <p className="text-muted-foreground">No payments logged yet.</p>}
+          {recent.length === 0 && <p className="text-muted-foreground">No payments logged yet.</p>}
         </div>
       </Card>
     </div>
