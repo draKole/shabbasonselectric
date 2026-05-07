@@ -297,6 +297,48 @@ export type Database = {
         }
         Relationships: []
       }
+      estimate_templates: {
+        Row: {
+          active: boolean
+          created_at: string
+          deposit: number
+          display_order: number
+          id: string
+          label: string
+          materials: string
+          scope: string
+          slug: string | null
+          total: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          deposit?: number
+          display_order?: number
+          id?: string
+          label: string
+          materials?: string
+          scope?: string
+          slug?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          deposit?: number
+          display_order?: number
+          id?: string
+          label?: string
+          materials?: string
+          scope?: string
+          slug?: string | null
+          total?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       estimates: {
         Row: {
           approved_at: string | null
@@ -996,6 +1038,114 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          notes: string | null
+          paid_on: string
+          worker_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_on?: string
+          worker_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          paid_on?: string
+          worker_id?: string
+        }
+        Relationships: []
+      }
+      worker_time_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          hourly_rate: number
+          hours: number
+          id: string
+          job_id: string | null
+          notes: string | null
+          work_date: string
+          worker_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          hourly_rate?: number
+          hours?: number
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          work_date?: string
+          worker_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          hourly_rate?: number
+          hours?: number
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          work_date?: string
+          worker_id?: string
+        }
+        Relationships: []
+      }
+      workers: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string | null
+          full_name: string
+          hourly_rate: number
+          id: string
+          notes: string | null
+          pay_type: string
+          phone: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          full_name: string
+          hourly_rate?: number
+          id?: string
+          notes?: string | null
+          pay_type?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          hourly_rate?: number
+          id?: string
+          notes?: string | null
+          pay_type?: string
+          phone?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1011,6 +1161,10 @@ export type Database = {
       }
       recompute_debt_balance: { Args: { _debt_id: string }; Returns: undefined }
       recompute_job_totals: { Args: { _job_id: string }; Returns: undefined }
+      recompute_job_worker_labor: {
+        Args: { _job_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "staff"
