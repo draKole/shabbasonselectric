@@ -66,6 +66,7 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("job_tasks").update({ status: "done", completed_at: new Date().toISOString() }).eq("id", id);
     if (error) return toast.error(error.message);
     setTodayTasks((prev) => prev.filter((t) => t.id !== id));
+  }
 
   function reviewText(name?: string) {
     return `Thank you for choosing Shabba & Sons Electric${name ? `, ${name}` : ""}. If you were happy with the work, I'd really appreciate a quick Google review. It helps my family business grow. ${googleUrl || "[Google Review Link]"}`;
