@@ -163,6 +163,27 @@ export default function AdminDashboard() {
 
       <Card className="p-4">
         <div className="flex items-center justify-between mb-3">
+          <h2 className="font-bold flex items-center gap-2"><ListChecks className="h-4 w-4 text-secondary" /> Today's Tasks</h2>
+          <span className="text-xs text-muted-foreground">{todayTasks.length} due / overdue</span>
+        </div>
+        <div className="space-y-2">
+          {todayTasks.map((t: any) => (
+            <div key={t.id} className="flex items-center justify-between gap-2 p-2 rounded-md border border-border">
+              <Link to={`/admin/jobs/${t.job_id}`} className="min-w-0 flex-1">
+                <div className="font-medium truncate">{t.title}</div>
+                <div className="text-xs text-muted-foreground truncate">
+                  {t.jobs?.customers?.name || "—"}{t.due_date ? ` · due ${t.due_date}` : ""}
+                </div>
+              </Link>
+              <Button size="sm" onClick={() => completeTask(t.id)} className="bg-success text-success-foreground hover:bg-success/90"><Check className="h-3.5 w-3.5" /></Button>
+            </div>
+          ))}
+          {todayTasks.length === 0 && <div className="text-sm text-muted-foreground p-2">No open tasks.</div>}
+        </div>
+      </Card>
+
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="font-bold flex items-center gap-2"><Star className="h-4 w-4 text-accent" /> Review Follow-Ups</h2>
           <span className="text-xs text-muted-foreground">{followUps.length} pending</span>
         </div>
