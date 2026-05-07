@@ -409,6 +409,7 @@ export type Database = {
           admin_notes: string | null
           availability: string | null
           city: string | null
+          converted_worker_id: string | null
           created_at: string
           desired_pay: string | null
           email: string | null
@@ -431,6 +432,7 @@ export type Database = {
           admin_notes?: string | null
           availability?: string | null
           city?: string | null
+          converted_worker_id?: string | null
           created_at?: string
           desired_pay?: string | null
           email?: string | null
@@ -453,6 +455,7 @@ export type Database = {
           admin_notes?: string | null
           availability?: string | null
           city?: string | null
+          converted_worker_id?: string | null
           created_at?: string
           desired_pay?: string | null
           email?: string | null
@@ -1157,11 +1160,15 @@ export type Database = {
           full_name: string
           hourly_rate: number
           id: string
+          insurance_pct: number
           notes: string | null
           pay_type: string
           phone: string | null
+          ppe_monthly: number
           role: string
+          tax_pct: number
           updated_at: string
+          workers_comp_pct: number
         }
         Insert: {
           active?: boolean
@@ -1170,11 +1177,15 @@ export type Database = {
           full_name: string
           hourly_rate?: number
           id?: string
+          insurance_pct?: number
           notes?: string | null
           pay_type?: string
           phone?: string | null
+          ppe_monthly?: number
           role?: string
+          tax_pct?: number
           updated_at?: string
+          workers_comp_pct?: number
         }
         Update: {
           active?: boolean
@@ -1183,11 +1194,15 @@ export type Database = {
           full_name?: string
           hourly_rate?: number
           id?: string
+          insurance_pct?: number
           notes?: string | null
           pay_type?: string
           phone?: string | null
+          ppe_monthly?: number
           role?: string
+          tax_pct?: number
           updated_at?: string
+          workers_comp_pct?: number
         }
         Relationships: []
       }

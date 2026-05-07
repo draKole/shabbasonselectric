@@ -87,8 +87,11 @@ export default function AdminBills() {
   const inMonth = bills.filter((b) => b.due_date && new Date(b.due_date) >= monthStart && new Date(b.due_date) <= monthEnd);
   const totalMonth = inMonth.reduce((s, b) => s + Number(b.amount), 0);
   const paidMonth = inMonth.filter((b) => b.paid).reduce((s, b) => s + Number(b.amount), 0);
-  const remainingMonth = totalMonth - paidMonth;
-  const pastDue = bills.filter((b) => !b.paid && b.due_date && new Date(b.due_date) < now);
+  // Remaining = unpaid bills due this month + ALL past-due unpaid bills (carry-over until paid)
+  const pastDue = bills.filter((b) => !b.paid && b.due_date && new Date(b.due_date) < monthStart);
+  const unpaidThisMonth = inMonth.filter((b) => !b.paid).reduce((s, b) => s + Number(b.amount), 0);
+  const pastDueAmt = pastDue.reduce((s, b) => s + Number(b.amount), 0);
+  const remainingMonth = unpaidThisMonth + pastDueAmt;
   const critical = bills.filter((b) => !b.paid && b.priority === "critical");
 
   return (

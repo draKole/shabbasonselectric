@@ -25,7 +25,7 @@ import AdminPipeline from "./pages/admin/AdminPipeline";
 import AdminEstimates from "./pages/admin/AdminEstimates";
 import AdminReviews from "./pages/admin/AdminReviews";
 import AdminPortfolio from "./pages/admin/AdminPortfolio";
-import AdminMessages from "./pages/admin/AdminMessages";
+// AdminMessages removed
 import AdminMoney from "./pages/admin/AdminMoney";
 import AdminSetup from "./pages/admin/AdminSetup";
 import AdminSettings from "./pages/admin/AdminSettings";
@@ -73,7 +73,7 @@ const App = () => (
               <Route path="estimates" element={<AdminEstimates />} />
               <Route path="reviews" element={<AdminReviews />} />
               <Route path="portfolio" element={<AdminPortfolio />} />
-              <Route path="messages" element={<AdminMessages />} />
+              {/* messages route removed */}
               <Route path="money" element={<AdminMoney />} />
               <Route path="applications" element={<AdminApplications />} />
               <Route path="bills" element={<AdminBills />} />
