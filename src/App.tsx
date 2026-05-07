@@ -33,6 +33,7 @@ import AdminApplications from "./pages/admin/AdminApplications";
 import AdminBills from "./pages/admin/AdminBills";
 import AdminDebt from "./pages/admin/AdminDebt";
 import AdminContacts from "./pages/admin/AdminContacts";
+import AdminContactDetail from "./pages/admin/AdminContactDetail";
 import AdminWorkers from "./pages/admin/AdminWorkers";
 import AdminTemplates from "./pages/admin/AdminTemplates";
 import Careers from "./pages/Careers";
