@@ -77,7 +77,7 @@ export default function AdminContacts() {
                 {g.aliases.length > 0 && (
                   <div className="text-[10px] text-muted-foreground mt-0.5">+{g.aliases.length} duplicate entr{g.aliases.length === 1 ? "y" : "ies"} merged by phone</div>
                 )}
-              </div>
+              </Link>
               <div className="flex gap-2">
                 {g.primary.phone && <>
                   <a href={`tel:${g.primary.phone}`}><Badge variant="outline" className="gap-1"><Phone className="h-3 w-3" />Call</Badge></a>
