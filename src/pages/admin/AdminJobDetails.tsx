@@ -158,6 +158,13 @@ export default function AdminJobDetails() {
             <div><Label>Deposit Required</Label><Input type="number" step="0.01" defaultValue={job.deposit_required} onBlur={(e) => update({ deposit_required: Number(e.target.value) })} /></div>
             <div><Label>Amount Paid (auto)</Label><Input type="number" value={Number(job.amount_paid || 0).toFixed(2)} disabled /></div>
             <div><Label>Open Balance (auto)</Label><Input type="number" value={Number(job.balance_due || 0).toFixed(2)} disabled /></div>
+            <div><Label>Worker Labor (auto)</Label><Input type="number" value={Number(job.worker_labor_cost || 0).toFixed(2)} disabled /></div>
+            <div><Label>Other Expenses</Label><Input type="number" step="0.01" defaultValue={job.other_expenses || 0} onBlur={(e) => update({ other_expenses: Number(e.target.value) })} /></div>
+            <div className="col-span-2 rounded-md bg-success/5 border border-success/30 p-2 text-sm">
+              <span className="text-muted-foreground">Net profit estimate: </span>
+              <b className="text-success">${Math.max(Number(job.amount_paid || 0) - Number(job.materials_cost || 0) - Number(job.worker_labor_cost || 0) - Number(job.other_expenses || 0), 0).toFixed(2)}</b>
+              <span className="text-xs text-muted-foreground"> (paid − materials me − labor − other)</span>
+            </div>
             <div className="col-span-2">
               <Label>Payment Status</Label>
               <div className="mt-1"><Badge>{PAYMENT_STATUS_LABELS[job.payment_status] || job.payment_status}</Badge></div>
