@@ -2,29 +2,41 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { setAppSetting } from "@/lib/useAppSettings";
 import { toast } from "sonner";
 import { useAllocationPresets, type Preset, type Bucket } from "@/lib/useAllocations";
+import { useGlobalSettings, saveGlobalSettings, isYes, type GlobalSettings } from "@/lib/useGlobalSettings";
 import { Plus, Trash2, Check, Star, ArrowUp, ArrowDown } from "lucide-react";
 
 export default function AdminSettings() {
-  const [google, setGoogle] = useState("");
   const [busy, setBusy] = useState(false);
-  const { presets, reload } = useAllocationPresets();
+  const { presets, reload, active } = useAllocationPresets();
+  const { settings, reload: reloadSettings } = useGlobalSettings();
+  const [form, setForm] = useState<GlobalSettings>(settings);
+  const [defaultPresetId, setDefaultPresetId] = useState<string>("");
 
-  useEffect(() => {
-    supabase.from("app_settings").select("value").eq("key", "google_review_url").maybeSingle()
-      .then(({ data }) => setGoogle(data?.value || ""));
-  }, []);
+  useEffect(() => { setForm(settings); }, [settings]);
+  useEffect(() => { if (active && !defaultPresetId) setDefaultPresetId(active.id); }, [active, defaultPresetId]);
 
-  async function save() {
+  function set<K extends keyof GlobalSettings>(k: K, v: string) {
+    setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function saveAll() {
     setBusy(true);
-    const { error } = await setAppSetting("google_review_url", google.trim());
+    const { error } = await saveGlobalSettings(form);
+    if (defaultPresetId) {
+      await supabase.from("allocation_presets").update({ is_active: false }).neq("id", defaultPresetId);
+      await supabase.from("allocation_presets").update({ is_active: true }).eq("id", defaultPresetId);
+    }
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success("Settings saved");
+    reloadSettings();
+    reload();
   }
 
   const [recalcing, setRecalcing] = useState(false);
