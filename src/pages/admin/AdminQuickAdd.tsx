@@ -118,7 +118,7 @@ export default function AdminQuickAdd() {
         scheduled_start: v.scheduled ? new Date(v.scheduled).toISOString() : null,
         job_total: total,
         estimate_amount: total,
-        hourly_rate: Number(v.hourly_rate || 125),
+        hourly_rate: Number(v.hourly_rate || settings.default_hourly_rate || 125),
         estimated_hours: Number(v.estimated_hours || 0),
         actual_hours: Number(v.actual_hours || 0),
         review_requested: v.review_requested,
