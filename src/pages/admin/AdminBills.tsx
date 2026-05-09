@@ -84,11 +84,14 @@ export default function AdminBills() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-  const inMonth = bills.filter((b) => b.due_date && new Date(b.due_date) >= monthStart && new Date(b.due_date) <= monthEnd);
+  const ymStart = monthStart.toISOString().slice(0, 10);
+  const ymEnd = monthEnd.toISOString().slice(0, 10);
+  const inMonth = bills.filter((b) => b.due_date && b.due_date >= ymStart && b.due_date <= ymEnd);
   const totalMonth = inMonth.reduce((s, b) => s + Number(b.amount), 0);
-  const paidMonth = inMonth.filter((b) => b.paid).reduce((s, b) => s + Number(b.amount), 0);
-  // Remaining = unpaid bills due this month + ALL past-due unpaid bills (carry-over until paid)
-  const pastDue = bills.filter((b) => !b.paid && b.due_date && new Date(b.due_date) < monthStart);
+  // Paid this month = bills marked paid whose paid_on falls inside this month (regardless of due_date)
+  const paidMonth = bills.filter((b) => b.paid && b.paid_on && b.paid_on >= ymStart && b.paid_on <= ymEnd).reduce((s, b) => s + Number(b.amount), 0);
+  // Remaining = unpaid due this month + ALL past-due unpaid (carry over until paid)
+  const pastDue = bills.filter((b) => !b.paid && b.due_date && b.due_date < ymStart);
   const unpaidThisMonth = inMonth.filter((b) => !b.paid).reduce((s, b) => s + Number(b.amount), 0);
   const pastDueAmt = pastDue.reduce((s, b) => s + Number(b.amount), 0);
   const remainingMonth = unpaidThisMonth + pastDueAmt;
