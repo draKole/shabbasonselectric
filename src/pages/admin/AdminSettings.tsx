@@ -63,6 +63,12 @@ export default function AdminSettings() {
         <Button onClick={save} disabled={busy}>{busy ? "Saving..." : "Save"}</Button>
       </Card>
 
+      <Card className="p-5 space-y-2">
+        <h2 className="font-bold">Recalculate All Totals</h2>
+        <p className="text-xs text-muted-foreground">If money numbers ever look stale, this safely recomputes job totals (paid/balance/labor) and debt balances from the actual transactions. Does not delete any data.</p>
+        <Button onClick={recalcAll} disabled={recalcing} variant="outline">{recalcing ? "Recalculating..." : "Recalculate Now"}</Button>
+      </Card>
+
       <Card className="p-5 space-y-4">
         <div>
           <h2 className="font-bold">Money Allocation Presets</h2>
