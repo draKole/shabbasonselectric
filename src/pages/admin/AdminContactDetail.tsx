@@ -23,6 +23,7 @@ export default function AdminContactDetail() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [labor, setLabor] = useState<any[]>([]);
   const [edit, setEdit] = useState<any>(null);
   const { value: googleUrl } = useAppSetting("google_review_url");
 
@@ -43,12 +44,16 @@ export default function AdminContactDetail() {
     setJobs(js || []);
     const jobIds = (js || []).map((j) => j.id);
     if (jobIds.length) {
-      const [{ data: mats }, { data: pays }] = await Promise.all([
+      const [{ data: mats }, { data: pays }, { data: wte }] = await Promise.all([
         supabase.from("job_materials").select("cost, paid_by, job_id").in("job_id", jobIds),
         supabase.from("job_payments").select("amount, paid_on, job_id").in("job_id", jobIds),
+        supabase.from("worker_time_entries").select("amount, job_id").in("job_id", jobIds),
       ]);
       setMaterials(mats || []);
       setPayments(pays || []);
+      setLabor(wte || []);
+    } else {
+      setMaterials([]); setPayments([]); setLabor([]);
     }
   }
   useEffect(() => { if (id) load(); }, [id]);
