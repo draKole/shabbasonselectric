@@ -31,7 +31,7 @@ export default function AdminQuickAdd() {
     payment_method: "cash",
     materials_paid_by_me: true,
     materials_cost: "", materials_notes: "",
-    estimated_hours: "", actual_hours: "", hourly_rate: "125",
+    estimated_hours: "", actual_hours: "", hourly_rate: "",
     review_requested: false,
   });
 
