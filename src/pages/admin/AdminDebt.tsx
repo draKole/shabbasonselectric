@@ -194,7 +194,7 @@ export default function AdminDebt() {
               <Progress value={pct} className="mt-3" />
               <div className="text-xs text-muted-foreground mt-1">{pct.toFixed(0)}% paid down</div>
               <div className="flex gap-1 mt-3 flex-wrap">
-                <Button size="sm" onClick={() => { setPayDebt(d); setPayOpen(true); }} className="bg-success text-success-foreground hover:bg-success/90 gap-1"><DollarSign className="h-3.5 w-3.5" /> Log Payment</Button>
+                <Button size="sm" onClick={() => openNewPayment(d)} className="bg-success text-success-foreground hover:bg-success/90 gap-1"><DollarSign className="h-3.5 w-3.5" /> Log Payment</Button>
                 <Button size="sm" variant="outline" onClick={() => { setEditing(d); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                 <Button size="sm" variant="outline" onClick={() => del(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
               </div>
@@ -207,12 +207,19 @@ export default function AdminDebt() {
       <Card className="p-4">
         <h2 className="font-bold mb-2">Recent Payments</h2>
         <div className="space-y-1 text-sm">
-          {payments.slice(0, 15).map((p) => {
+          {payments.slice(0, 30).map((p) => {
             const d = debts.find((x) => x.id === p.debt_id);
             return (
-              <div key={p.id} className="flex justify-between border-b border-border py-1.5">
-                <span>{d?.name || "—"} <span className="text-xs text-muted-foreground">· {p.method}</span></span>
-                <span className="font-semibold">{fmt(Number(p.amount))} <span className="text-xs text-muted-foreground">{p.paid_on}</span></span>
+              <div key={p.id} className="flex items-center justify-between border-b border-border py-1.5 gap-2">
+                <div className="min-w-0">
+                  <div className="font-semibold truncate">{d?.name || "—"} <span className="text-xs text-muted-foreground font-normal">· {p.method}</span></div>
+                  <div className="text-xs text-muted-foreground">{p.paid_on}{p.notes ? ` · ${p.notes}` : ""}</div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-bold">{fmt(Number(p.amount))}</span>
+                  <Button size="sm" variant="ghost" onClick={() => openEditPayment(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => delPayment(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                </div>
               </div>
             );
           })}
@@ -220,19 +227,22 @@ export default function AdminDebt() {
         </div>
       </Card>
 
-      <Dialog open={payOpen} onOpenChange={setPayOpen}>
+      <Dialog open={payOpen} onOpenChange={(o) => { setPayOpen(o); if (!o) setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" }); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Log Payment — {payDebt?.name}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{payForm.id ? "Edit Payment" : "Log Payment"} — {payDebt?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
-            <div><Label>Amount ($)</Label><Input type="number" value={payAmt} onChange={(e) => setPayAmt(e.target.value)} /></div>
+            <div className="grid grid-cols-2 gap-2">
+              <div><Label>Amount ($)</Label><Input type="number" step="0.01" value={payForm.amount} onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })} /></div>
+              <div><Label>Date</Label><Input type="date" value={payForm.paid_on} onChange={(e) => setPayForm({ ...payForm, paid_on: e.target.value })} /></div>
+            </div>
             <div><Label>Method</Label>
-              <Select value={payMethod} onValueChange={setPayMethod}>
+              <Select value={payForm.method} onValueChange={(v) => setPayForm({ ...payForm, method: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </div>
-            <div><Label>Notes</Label><Textarea value={payNotes} onChange={(e) => setPayNotes(e.target.value)} /></div>
-            <Button onClick={logPayment} className="w-full bg-success text-success-foreground hover:bg-success/90">Save Payment</Button>
+            <div><Label>Notes</Label><Textarea value={payForm.notes} onChange={(e) => setPayForm({ ...payForm, notes: e.target.value })} /></div>
+            <Button onClick={logPayment} className="w-full gap-1 bg-success text-success-foreground hover:bg-success/90"><Save className="h-4 w-4" />{payForm.id ? "Save Changes" : "Log Payment"}</Button>
           </div>
         </DialogContent>
       </Dialog>
