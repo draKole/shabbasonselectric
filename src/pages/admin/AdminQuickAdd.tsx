@@ -17,6 +17,9 @@ export default function AdminQuickAdd() {
   const customerId = params.get("customer_id");
   const [busy, setBusy] = useState(false);
   const [existingCustomer, setExistingCustomer] = useState<any>(null);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [contactSearch, setContactSearch] = useState("");
+  const [showSuggest, setShowSuggest] = useState(false);
   const [v, setV] = useState({
     name: "", phone: "", address: "", city: "Columbus",
     job_type: "electrical_repair", status: "scheduled",
@@ -31,15 +34,38 @@ export default function AdminQuickAdd() {
   });
 
   useEffect(() => {
+    supabase.from("customers").select("id, name, phone, email, address, city").order("created_at", { ascending: false })
+      .then(({ data }) => setAllCustomers(data || []));
+  }, []);
+
+  function attachContact(c: any) {
+    setExistingCustomer(c);
+    setV((cur) => ({ ...cur, name: c.name || "", phone: c.phone || "", address: c.address || "", city: c.city || cur.city }));
+    setContactSearch("");
+    setShowSuggest(false);
+  }
+
+  useEffect(() => {
     if (!customerId) return;
-    import("@/integrations/supabase/client").then(({ supabase }) =>
-      supabase.from("customers").select("*").eq("id", customerId).single().then(({ data }) => {
-        if (!data) return;
-        setExistingCustomer(data);
-        setV((cur) => ({ ...cur, name: data.name || "", phone: data.phone || "", address: data.address || "", city: data.city || cur.city }));
-      })
-    );
+    supabase.from("customers").select("*").eq("id", customerId).single().then(({ data }) => {
+      if (data) attachContact(data);
+    });
   }, [customerId]);
+
+  // Phone match suggestion (if typing a new contact and phone matches an existing one)
+  const phoneDigits = (v.phone || "").replace(/\D/g, "").slice(-10);
+  const phoneMatch = !existingCustomer && phoneDigits.length >= 7
+    ? allCustomers.find((c) => (c.phone || "").replace(/\D/g, "").slice(-10) === phoneDigits)
+    : null;
+
+  const suggestions = contactSearch.trim().length >= 1
+    ? allCustomers.filter((c) => {
+        const s = contactSearch.toLowerCase();
+        return (c.name || "").toLowerCase().includes(s)
+          || (c.phone || "").includes(s)
+          || (c.address || "").toLowerCase().includes(s);
+      }).slice(0, 8)
+    : [];
 
   const total = Number(v.job_total || 0);
   const paid = Number(v.amount_paid || 0);
