@@ -1289,6 +1289,8 @@ export type Database = {
         | "inspection_permit_support"
         | "contractor_support"
         | "other"
+        | "auction_job"
+        | "ev_charger"
       payment_status:
         | "unpaid"
         | "partial"
@@ -1501,6 +1503,8 @@ export const Constants = {
         "inspection_permit_support",
         "contractor_support",
         "other",
+        "auction_job",
+        "ev_charger",
       ],
       payment_status: ["unpaid", "partial", "paid", "deposit_paid", "refunded"],
       permit_status: ["yes", "no", "not_sure"],

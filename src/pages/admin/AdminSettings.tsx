@@ -2,29 +2,41 @@ import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { setAppSetting } from "@/lib/useAppSettings";
 import { toast } from "sonner";
 import { useAllocationPresets, type Preset, type Bucket } from "@/lib/useAllocations";
+import { useGlobalSettings, saveGlobalSettings, isYes, type GlobalSettings } from "@/lib/useGlobalSettings";
 import { Plus, Trash2, Check, Star, ArrowUp, ArrowDown } from "lucide-react";
 
 export default function AdminSettings() {
-  const [google, setGoogle] = useState("");
   const [busy, setBusy] = useState(false);
-  const { presets, reload } = useAllocationPresets();
+  const { presets, reload, active } = useAllocationPresets();
+  const { settings, reload: reloadSettings } = useGlobalSettings();
+  const [form, setForm] = useState<GlobalSettings>(settings);
+  const [defaultPresetId, setDefaultPresetId] = useState<string>("");
 
-  useEffect(() => {
-    supabase.from("app_settings").select("value").eq("key", "google_review_url").maybeSingle()
-      .then(({ data }) => setGoogle(data?.value || ""));
-  }, []);
+  useEffect(() => { setForm(settings); }, [settings]);
+  useEffect(() => { if (active && !defaultPresetId) setDefaultPresetId(active.id); }, [active, defaultPresetId]);
 
-  async function save() {
+  function set<K extends keyof GlobalSettings>(k: K, v: string) {
+    setForm((f) => ({ ...f, [k]: v }));
+  }
+
+  async function saveAll() {
     setBusy(true);
-    const { error } = await setAppSetting("google_review_url", google.trim());
+    const { error } = await saveGlobalSettings(form);
+    if (defaultPresetId) {
+      await supabase.from("allocation_presets").update({ is_active: false }).neq("id", defaultPresetId);
+      await supabase.from("allocation_presets").update({ is_active: true }).eq("id", defaultPresetId);
+    }
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success("Settings saved");
+    reloadSettings();
+    reload();
   }
 
   const [recalcing, setRecalcing] = useState(false);
@@ -53,14 +65,57 @@ export default function AdminSettings() {
     <div className="container-tight py-6 max-w-3xl space-y-6">
       <h1 className="text-2xl font-extrabold">Settings</h1>
 
-      <Card className="p-5 space-y-3">
-        <h2 className="font-bold">Google Review Link</h2>
+      <Card className="p-5 space-y-4">
         <div>
-          <Label>URL</Label>
-          <Input value={google} onChange={(e) => setGoogle(e.target.value)} placeholder="https://g.page/r/.../review" />
-          <p className="text-xs text-muted-foreground mt-1">Used everywhere the site shows "Leave a Google Review".</p>
+          <h2 className="font-bold">Business Info</h2>
+          <p className="text-xs text-muted-foreground">Used in estimates, review requests, and the public site copy.</p>
         </div>
-        <Button onClick={save} disabled={busy}>{busy ? "Saving..." : "Save"}</Button>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div><Label>Business Name</Label><Input value={form.business_name} onChange={(e) => set("business_name", e.target.value)} /></div>
+          <div><Label>Business Phone</Label><Input value={form.business_phone} onChange={(e) => set("business_phone", e.target.value)} /></div>
+          <div className="sm:col-span-2"><Label>Business Address (optional)</Label><Input value={form.business_address} onChange={(e) => set("business_address", e.target.value)} /></div>
+          <div className="sm:col-span-2"><Label>Google Review Link</Label><Input value={form.google_review_url} onChange={(e) => set("google_review_url", e.target.value)} placeholder="https://g.page/r/.../review" /></div>
+          <div className="sm:col-span-2"><Label>Review Request Text</Label><Textarea value={form.review_request_text} onChange={(e) => set("review_request_text", e.target.value)} rows={2} /></div>
+          <div className="sm:col-span-2"><Label>Estimate Default Terms</Label><Textarea value={form.estimate_default_terms} onChange={(e) => set("estimate_default_terms", e.target.value)} rows={3} /></div>
+        </div>
+      </Card>
+
+      <Card className="p-5 space-y-4">
+        <div>
+          <h2 className="font-bold">Money Defaults & Worker Burden</h2>
+          <p className="text-xs text-muted-foreground">Defaults pre-fill new jobs/workers. Burden % is for business profit planning, not payroll filing.</p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div><Label>Default Hourly Rate ($)</Label><Input type="number" step="1" value={form.default_hourly_rate} onChange={(e) => set("default_hourly_rate", e.target.value)} /></div>
+          <div><Label>Default Tax %</Label><Input type="number" step="0.1" value={form.default_tax_pct} onChange={(e) => set("default_tax_pct", e.target.value)} /></div>
+          <div><Label>Worker Burden %</Label><Input type="number" step="0.1" value={form.default_burden_pct} onChange={(e) => set("default_burden_pct", e.target.value)} /></div>
+          <div><Label>Workers Comp %</Label><Input type="number" step="0.1" value={form.default_workers_comp_pct} onChange={(e) => set("default_workers_comp_pct", e.target.value)} /></div>
+          <div><Label>Insurance %</Label><Input type="number" step="0.1" value={form.default_insurance_pct} onChange={(e) => set("default_insurance_pct", e.target.value)} /></div>
+          <div><Label>PPE / Tools $/mo per worker</Label><Input type="number" step="1" value={form.default_ppe_monthly} onChange={(e) => set("default_ppe_monthly", e.target.value)} /></div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t">
+          <label className="flex items-center justify-between rounded-md border border-border p-3 cursor-pointer">
+            <div>
+              <div className="font-semibold text-sm">Include burden in Reports?</div>
+              <div className="text-xs text-muted-foreground">Show true worker cost on Reports.</div>
+            </div>
+            <Switch checked={isYes(form.burden_in_reports)} onCheckedChange={(c) => set("burden_in_reports", c ? "yes" : "no")} />
+          </label>
+          <label className="flex items-center justify-between rounded-md border border-border p-3 cursor-pointer">
+            <div>
+              <div className="font-semibold text-sm">Include burden in Job Profit?</div>
+              <div className="text-xs text-muted-foreground">Subtract true worker cost from net profit.</div>
+            </div>
+            <Switch checked={isYes(form.burden_in_profit)} onCheckedChange={(c) => set("burden_in_profit", c ? "yes" : "no")} />
+          </label>
+        </div>
+        <div>
+          <Label>Default Allocation Preset</Label>
+          <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={defaultPresetId} onChange={(e) => setDefaultPresetId(e.target.value)}>
+            {presets.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+        <Button onClick={saveAll} disabled={busy}>{busy ? "Saving..." : "Save Settings"}</Button>
       </Card>
 
       <Card className="p-5 space-y-2">

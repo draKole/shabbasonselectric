@@ -9,12 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { JOB_TYPE_LABELS, JOB_STATUS_LABELS } from "@/lib/jobTypes";
+import { useGlobalSettings } from "@/lib/useGlobalSettings";
 import { toast } from "sonner";
 
 export default function AdminQuickAdd() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const customerId = params.get("customer_id");
+  const { settings } = useGlobalSettings();
   const [busy, setBusy] = useState(false);
   const [existingCustomer, setExistingCustomer] = useState<any>(null);
   const [allCustomers, setAllCustomers] = useState<any[]>([]);
@@ -29,7 +31,7 @@ export default function AdminQuickAdd() {
     payment_method: "cash",
     materials_paid_by_me: true,
     materials_cost: "", materials_notes: "",
-    estimated_hours: "", actual_hours: "", hourly_rate: "125",
+    estimated_hours: "", actual_hours: "", hourly_rate: "",
     review_requested: false,
   });
 
@@ -37,6 +39,13 @@ export default function AdminQuickAdd() {
     supabase.from("customers").select("id, name, phone, email, address, city").order("created_at", { ascending: false })
       .then(({ data }) => setAllCustomers(data || []));
   }, []);
+
+  // Pre-fill default hourly rate from global settings once loaded
+  useEffect(() => {
+    if (!v.hourly_rate && settings.default_hourly_rate) {
+      setV((cur) => ({ ...cur, hourly_rate: settings.default_hourly_rate }));
+    }
+  }, [settings.default_hourly_rate]);
 
   function attachContact(c: any) {
     setExistingCustomer(c);
@@ -109,7 +118,7 @@ export default function AdminQuickAdd() {
         scheduled_start: v.scheduled ? new Date(v.scheduled).toISOString() : null,
         job_total: total,
         estimate_amount: total,
-        hourly_rate: Number(v.hourly_rate || 125),
+        hourly_rate: Number(v.hourly_rate || settings.default_hourly_rate || 125),
         estimated_hours: Number(v.estimated_hours || 0),
         actual_hours: Number(v.actual_hours || 0),
         review_requested: v.review_requested,
