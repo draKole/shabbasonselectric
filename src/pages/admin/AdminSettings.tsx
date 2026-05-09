@@ -27,6 +27,28 @@ export default function AdminSettings() {
     toast.success("Saved");
   }
 
+  const [recalcing, setRecalcing] = useState(false);
+  async function recalcAll() {
+    setRecalcing(true);
+    try {
+      const { data: jobs } = await supabase.from("jobs").select("id");
+      const { data: debts } = await supabase.from("debts").select("id");
+      const jobIds = (jobs || []).map((j: any) => j.id);
+      const debtIds = (debts || []).map((d: any) => d.id);
+      // Recompute each job's totals + worker labor, and each debt
+      await Promise.all([
+        ...jobIds.map((id) => supabase.rpc("recompute_job_totals", { _job_id: id } as any)),
+        ...jobIds.map((id) => supabase.rpc("recompute_job_worker_labor", { _job_id: id } as any)),
+        ...debtIds.map((id) => supabase.rpc("recompute_debt_balance", { _debt_id: id } as any)),
+      ]);
+      toast.success(`Recalculated ${jobIds.length} jobs and ${debtIds.length} debts`);
+    } catch (e: any) {
+      toast.error(e.message || "Recalc failed");
+    } finally {
+      setRecalcing(false);
+    }
+  }
+
   return (
     <div className="container-tight py-6 max-w-3xl space-y-6">
       <h1 className="text-2xl font-extrabold">Settings</h1>
