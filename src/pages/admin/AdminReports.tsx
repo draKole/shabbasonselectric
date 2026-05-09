@@ -22,9 +22,13 @@ function dl(name: string, content: string) {
 }
 
 export default function AdminReports() {
+  const { settings } = useGlobalSettings();
+  const burdenOn = isYes(settings.burden_in_reports);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const mr = useMemo(() => monthRange(month), [month]);
-  const money = useMonthMoney(mr.from, mr.to);
+  const money = useMonthMoney(mr.from, mr.to, burdenOn ? "force-on" : "force-off");
+  const [billsPaidMonth, setBillsPaidMonth] = useState(0);
+  const [debtPaymentsMonth, setDebtPaymentsMonth] = useState(0);
   const [openBalances, setOpenBalances] = useState<any[]>([]);
   const [billsDue, setBillsDue] = useState<any[]>([]);
   const [debts, setDebts] = useState<any[]>([]);
