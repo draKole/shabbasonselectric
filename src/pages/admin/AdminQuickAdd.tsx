@@ -40,6 +40,13 @@ export default function AdminQuickAdd() {
       .then(({ data }) => setAllCustomers(data || []));
   }, []);
 
+  // Pre-fill default hourly rate from global settings once loaded
+  useEffect(() => {
+    if (!v.hourly_rate && settings.default_hourly_rate) {
+      setV((cur) => ({ ...cur, hourly_rate: settings.default_hourly_rate }));
+    }
+  }, [settings.default_hourly_rate]);
+
   function attachContact(c: any) {
     setExistingCustomer(c);
     setV((cur) => ({ ...cur, name: c.name || "", phone: c.phone || "", address: c.address || "", city: c.city || cur.city }));
