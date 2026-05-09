@@ -79,11 +79,24 @@ export default function AdminQuickAdd() {
     try {
       let cId = existingCustomer?.id;
       if (!cId) {
-        const { data: c, error: ce } = await supabase.from("customers").insert({
+        // Auto-attach to phone match if not yet attached
+        const pd = (v.phone || "").replace(/\D/g, "").slice(-10);
+        const match = pd.length >= 7 ? allCustomers.find((c) => (c.phone || "").replace(/\D/g, "").slice(-10) === pd) : null;
+        if (match) {
+          cId = match.id;
+        } else {
+          const { data: c, error: ce } = await supabase.from("customers").insert({
+            name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
+          }).select().single();
+          if (ce) throw ce;
+          cId = c.id;
+        }
+      }
+      // Sync any contact field tweaks back to the customer record
+      if (cId) {
+        await supabase.from("customers").update({
           name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
-        }).select().single();
-        if (ce) throw ce;
-        cId = c.id;
+        }).eq("id", cId);
       }
 
       const { data: j, error: je } = await supabase.from("jobs").insert({
