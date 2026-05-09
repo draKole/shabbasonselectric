@@ -14,6 +14,8 @@ export default function AdminDashboard() {
   const [recent, setRecent] = useState<any[]>([]);
   const [followUps, setFollowUps] = useState<any[]>([]);
   const [todayTasks, setTodayTasks] = useState<any[]>([]);
+  const [billsPaidMonth, setBillsPaidMonth] = useState(0);
+  const [billsRemaining, setBillsRemaining] = useState(0);
   const { value: googleUrl } = useAppSetting("google_review_url");
   const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
   const mr = useMemo(() => monthRange(monthKey), [monthKey]);
