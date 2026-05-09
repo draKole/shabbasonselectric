@@ -36,26 +36,36 @@ export default function AdminReports() {
 
   useEffect(() => {
     (async () => {
-      const [{ data: ob }, { data: bd }, { data: d }, { data: rn }] = await Promise.all([
+      const [{ data: ob }, { data: bd }, { data: d }, { data: rn }, { data: bp }, { data: dp }] = await Promise.all([
         supabase.from("jobs").select("id, balance_due, customers(name, phone)").gt("balance_due", 0).eq("archived", false),
         supabase.from("bills").select("*").eq("paid", false).order("due_date", { ascending: true }),
         supabase.from("debts").select("*").eq("paid_off", false),
         supabase.from("jobs").select("id, job_type, updated_at, customers(name, phone)")
           .in("status", ["completed", "paid"]).eq("review_requested", false),
+        supabase.from("bills").select("amount, paid_on").eq("paid", true).gte("paid_on", mr.from).lte("paid_on", mr.to),
+        supabase.from("debt_payments").select("amount, paid_on").gte("paid_on", mr.from).lte("paid_on", mr.to),
       ]);
       setOpenBalances(ob || []); setBillsDue(bd || []); setDebts(d || []); setReviewsNeeded(rn || []);
+      setBillsPaidMonth((bp || []).reduce((s: number, b: any) => s + Number(b.amount || 0), 0));
+      setDebtPaymentsMonth((dp || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0));
     })();
-  }, [month]);
+  }, [month, mr.from, mr.to]);
 
   function exportMonth() {
     const rows: (string | number)[][] = [
       ["Metric", "Amount"],
-      ["Income (collected)", money.collected.toFixed(2)],
+      ["Gross payments", money.collected.toFixed(2)],
       ["Materials (paid by me)", money.materialsMe.toFixed(2)],
-      ["Worker labor", money.workerLabor.toFixed(2)],
-      ["Other expenses", money.otherExp.toFixed(2)],
-      ["Net profit", money.netProfit.toFixed(2)],
+      ["Worker base pay", money.workerLabor.toFixed(2)],
     ];
+    if (burdenOn) {
+      rows.push(["Worker burden cost", money.workerBurden.toFixed(2)]);
+      rows.push(["True worker cost", money.workerTrueCost.toFixed(2)]);
+    }
+    rows.push(["Other expenses", money.otherExp.toFixed(2)]);
+    rows.push(["Net profit", money.netProfit.toFixed(2)]);
+    rows.push(["Bills paid", billsPaidMonth.toFixed(2)]);
+    rows.push(["Debt paid", debtPaymentsMonth.toFixed(2)]);
     dl(`shabba-money-${month}.csv`, csv(rows));
   }
   function exportOpenBalances() {
@@ -67,6 +77,7 @@ export default function AdminReports() {
   const totalDebt = debts.reduce((s: number, d: any) => s + Number(d.current_balance || 0), 0);
   const startDebt = debts.reduce((s: number, d: any) => s + Number(d.starting_balance || 0), 0);
   const debtPaidPct = startDebt > 0 ? Math.round(((startDebt - totalDebt) / startDebt) * 100) : 0;
+  const billsRemaining = billsDue.reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
 
   return (
     <div className="container-tight py-6 space-y-4">
@@ -76,14 +87,27 @@ export default function AdminReports() {
           <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
         </div>
         <Button variant="outline" onClick={exportMonth} className="gap-1"><Download className="h-4 w-4" /> Export month CSV</Button>
+        <div className="text-xs text-muted-foreground ml-auto">
+          Reports use actual dated transactions, not job status.
+          {burdenOn && <span className="ml-2 px-2 py-0.5 rounded bg-secondary/15 text-secondary">Burden ON</span>}
+        </div>
       </div>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        <Stat label="Income" value={`$${money.collected.toFixed(0)}`} />
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+        <Stat label="Gross payments" value={`$${money.collected.toFixed(0)}`} />
         <Stat label="Materials (me)" value={`$${money.materialsMe.toFixed(0)}`} />
-        <Stat label="Worker labor" value={`$${money.workerLabor.toFixed(0)}`} />
+        <Stat label="Worker base pay" value={`$${money.workerLabor.toFixed(0)}`} />
+        {burdenOn && <Stat label="Worker burden" value={`$${money.workerBurden.toFixed(0)}`} />}
+        {burdenOn && <Stat label="True worker cost" value={`$${money.workerTrueCost.toFixed(0)}`} />}
         <Stat label="Other expenses" value={`$${money.otherExp.toFixed(0)}`} />
         <Stat label="NET PROFIT" value={`$${money.netProfit.toFixed(0)}`} highlight />
+      </div>
+
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+        <Stat label="Bills paid (month)" value={`$${billsPaidMonth.toFixed(0)}`} />
+        <Stat label="Bills remaining" value={`$${billsRemaining.toFixed(0)}`} />
+        <Stat label="Debt paid (month)" value={`$${debtPaymentsMonth.toFixed(0)}`} />
+        <Stat label="Debt balance" value={`$${totalDebt.toFixed(0)}`} />
       </div>
 
       <Card className="p-4">
