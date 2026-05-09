@@ -137,7 +137,10 @@ export default function AdminBills() {
                   </Select>
                 </div>
               )}
-              <div className="flex items-center gap-2"><Switch checked={!!editing.paid} onCheckedChange={(v) => setEditing({ ...editing, paid: v })} /><Label>Paid</Label></div>
+              <div className="flex items-center gap-2"><Switch checked={!!editing.paid} onCheckedChange={(v) => setEditing({ ...editing, paid: v, paid_on: v ? (editing.paid_on || new Date().toISOString().slice(0, 10)) : null })} /><Label>Paid</Label></div>
+              {editing.paid && (
+                <div><Label>Paid On</Label><Input type="date" value={editing.paid_on || ""} onChange={(e) => setEditing({ ...editing, paid_on: e.target.value })} /></div>
+              )}
               <div><Label>Notes</Label><Textarea value={editing.notes || ""} onChange={(e) => setEditing({ ...editing, notes: e.target.value })} /></div>
               <Button onClick={save} className="w-full">Save</Button>
             </div>
