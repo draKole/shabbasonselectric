@@ -43,9 +43,7 @@ export default function AdminDebt() {
   const [editing, setEditing] = useState<Partial<Debt>>(empty);
   const [payOpen, setPayOpen] = useState(false);
   const [payDebt, setPayDebt] = useState<Debt | null>(null);
-  const [payAmt, setPayAmt] = useState("");
-  const [payMethod, setPayMethod] = useState("cash");
-  const [payNotes, setPayNotes] = useState("");
+  const [payForm, setPayForm] = useState<{ id?: string; amount: string; method: string; paid_on: string; notes: string }>({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" });
 
   async function load() {
     const [{ data: d }, { data: p }] = await Promise.all([
