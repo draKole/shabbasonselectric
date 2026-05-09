@@ -128,9 +128,38 @@ export default function AdminQuickAdd() {
   return (
     <div className="container-tight py-6 max-w-2xl">
       <h1 className="text-2xl font-extrabold mb-4">Quick Add Job</h1>
-      {existingCustomer && (
-        <div className="mb-3 text-sm rounded-md bg-success/10 border border-success/30 p-3">
-          Adding job for existing contact: <b>{existingCustomer.name}</b>
+      {existingCustomer ? (
+        <div className="mb-3 text-sm rounded-md bg-success/10 border border-success/30 p-3 flex items-center justify-between gap-2">
+          <div>Adding job for: <b>{existingCustomer.name}</b> {existingCustomer.phone && <span className="text-muted-foreground">· {existingCustomer.phone}</span>}</div>
+          <Button type="button" size="sm" variant="outline" onClick={() => { setExistingCustomer(null); setV((cur) => ({ ...cur, name: "", phone: "", address: "" })); }}>Change</Button>
+        </div>
+      ) : (
+        <Card className="p-3 mb-3 space-y-2">
+          <Label className="text-xs font-bold uppercase text-muted-foreground">Pick existing contact (or fill new below)</Label>
+          <div className="relative">
+            <Input
+              placeholder="Search name, phone, address..."
+              value={contactSearch}
+              onChange={(e) => { setContactSearch(e.target.value); setShowSuggest(true); }}
+              onFocus={() => setShowSuggest(true)}
+            />
+            {showSuggest && suggestions.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-md shadow-md max-h-64 overflow-auto">
+                {suggestions.map((c) => (
+                  <button type="button" key={c.id} onClick={() => attachContact(c)} className="w-full text-left p-2 hover:bg-muted text-sm border-b border-border last:border-0">
+                    <div className="font-semibold">{c.name}</div>
+                    <div className="text-xs text-muted-foreground">{c.phone}{c.address ? ` · ${c.address}` : ""}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+      {phoneMatch && !existingCustomer && (
+        <div className="mb-3 text-sm rounded-md bg-secondary/10 border border-secondary/30 p-3 flex items-center justify-between gap-2">
+          <div>This phone matches existing contact <b>{phoneMatch.name}</b>. Attach to them?</div>
+          <Button type="button" size="sm" onClick={() => attachContact(phoneMatch)}>Attach</Button>
         </div>
       )}
       <form onSubmit={save}>
