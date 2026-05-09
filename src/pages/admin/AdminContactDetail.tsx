@@ -63,11 +63,11 @@ export default function AdminContactDetail() {
     const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
     const balance = jobs.reduce((s, j) => s + Number(j.balance_due || 0), 0);
     const matsMe = materials.filter((m) => m.paid_by === "me").reduce((s, m) => s + Number(m.cost || 0), 0);
-    const labor = jobs.reduce((s, j) => s + Number(j.worker_labor_cost || 0), 0);
+    const laborSum = labor.reduce((s, e) => s + Number(e.amount || 0), 0);
     const otherExp = jobs.reduce((s, j) => s + Number(j.other_expenses || 0), 0);
-    const net = Math.max(paid - matsMe - labor - otherExp, 0);
-    return { billed, paid, balance, matsMe, labor, otherExp, net };
-  }, [jobs, payments, materials]);
+    const net = Math.max(paid - matsMe - laborSum - otherExp, 0);
+    return { billed, paid, balance, matsMe, labor: laborSum, otherExp, net };
+  }, [jobs, payments, materials, labor]);
 
   async function save() {
     const { error } = await supabase.from("customers").update({
