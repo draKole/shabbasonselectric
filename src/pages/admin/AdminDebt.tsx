@@ -83,16 +83,37 @@ export default function AdminDebt() {
     load();
   }
   async function logPayment() {
-    if (!payDebt || !payAmt) return;
-    const { error } = await supabase.from("debt_payments").insert({
+    if (!payDebt || !payForm.amount) return;
+    const payload = {
       debt_id: payDebt.id,
-      amount: Number(payAmt),
-      method: payMethod,
-      notes: payNotes || null,
-    });
+      amount: Number(payForm.amount),
+      method: payForm.method,
+      paid_on: payForm.paid_on || new Date().toISOString().slice(0,10),
+      notes: payForm.notes || null,
+    };
+    const { error } = payForm.id
+      ? await supabase.from("debt_payments").update(payload).eq("id", payForm.id)
+      : await supabase.from("debt_payments").insert(payload);
     if (error) return toast.error(error.message);
-    toast.success("Payment logged");
-    setPayOpen(false); setPayAmt(""); setPayNotes(""); setPayDebt(null); load();
+    toast.success(payForm.id ? "Payment updated" : "Payment logged");
+    setPayOpen(false); setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" }); setPayDebt(null); load();
+  }
+  async function delPayment(p: Payment) {
+    if (!confirm(`Delete this $${Number(p.amount).toFixed(2)} payment?`)) return;
+    const { error } = await supabase.from("debt_payments").delete().eq("id", p.id);
+    if (error) return toast.error(error.message);
+    toast.success("Payment deleted"); load();
+  }
+  function openEditPayment(p: Payment) {
+    const d = debts.find((x) => x.id === p.debt_id) || null;
+    setPayDebt(d);
+    setPayForm({ id: p.id, amount: String(p.amount), method: p.method, paid_on: p.paid_on, notes: p.notes || "" });
+    setPayOpen(true);
+  }
+  function openNewPayment(d: Debt) {
+    setPayDebt(d);
+    setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" });
+    setPayOpen(true);
   }
 
   const total = debts.reduce((s, d) => s + Number(d.current_balance), 0);
