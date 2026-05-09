@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { JOB_TYPE_LABELS, JOB_STATUS_LABELS } from "@/lib/jobTypes";
+import { useGlobalSettings } from "@/lib/useGlobalSettings";
 import { toast } from "sonner";
 
 export default function AdminQuickAdd() {
