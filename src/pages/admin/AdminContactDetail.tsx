@@ -23,6 +23,7 @@ export default function AdminContactDetail() {
   const [jobs, setJobs] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [payments, setPayments] = useState<any[]>([]);
+  const [labor, setLabor] = useState<any[]>([]);
   const [edit, setEdit] = useState<any>(null);
   const { value: googleUrl } = useAppSetting("google_review_url");
 
@@ -43,12 +44,16 @@ export default function AdminContactDetail() {
     setJobs(js || []);
     const jobIds = (js || []).map((j) => j.id);
     if (jobIds.length) {
-      const [{ data: mats }, { data: pays }] = await Promise.all([
+      const [{ data: mats }, { data: pays }, { data: wte }] = await Promise.all([
         supabase.from("job_materials").select("cost, paid_by, job_id").in("job_id", jobIds),
         supabase.from("job_payments").select("amount, paid_on, job_id").in("job_id", jobIds),
+        supabase.from("worker_time_entries").select("amount, job_id").in("job_id", jobIds),
       ]);
       setMaterials(mats || []);
       setPayments(pays || []);
+      setLabor(wte || []);
+    } else {
+      setMaterials([]); setPayments([]); setLabor([]);
     }
   }
   useEffect(() => { if (id) load(); }, [id]);
@@ -58,11 +63,11 @@ export default function AdminContactDetail() {
     const paid = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
     const balance = jobs.reduce((s, j) => s + Number(j.balance_due || 0), 0);
     const matsMe = materials.filter((m) => m.paid_by === "me").reduce((s, m) => s + Number(m.cost || 0), 0);
-    const labor = jobs.reduce((s, j) => s + Number(j.worker_labor_cost || 0), 0);
+    const laborSum = labor.reduce((s, e) => s + Number(e.amount || 0), 0);
     const otherExp = jobs.reduce((s, j) => s + Number(j.other_expenses || 0), 0);
-    const net = Math.max(paid - matsMe - labor - otherExp, 0);
-    return { billed, paid, balance, matsMe, labor, otherExp, net };
-  }, [jobs, payments, materials]);
+    const net = Math.max(paid - matsMe - laborSum - otherExp, 0);
+    return { billed, paid, balance, matsMe, labor: laborSum, otherExp, net };
+  }, [jobs, payments, materials, labor]);
 
   async function save() {
     const { error } = await supabase.from("customers").update({

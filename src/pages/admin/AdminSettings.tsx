@@ -27,6 +27,28 @@ export default function AdminSettings() {
     toast.success("Saved");
   }
 
+  const [recalcing, setRecalcing] = useState(false);
+  async function recalcAll() {
+    setRecalcing(true);
+    try {
+      const { data: jobs } = await supabase.from("jobs").select("id");
+      const { data: debts } = await supabase.from("debts").select("id");
+      const jobIds = (jobs || []).map((j: any) => j.id);
+      const debtIds = (debts || []).map((d: any) => d.id);
+      // Recompute each job's totals + worker labor, and each debt
+      await Promise.all([
+        ...jobIds.map((id) => supabase.rpc("recompute_job_totals", { _job_id: id } as any)),
+        ...jobIds.map((id) => supabase.rpc("recompute_job_worker_labor", { _job_id: id } as any)),
+        ...debtIds.map((id) => supabase.rpc("recompute_debt_balance", { _debt_id: id } as any)),
+      ]);
+      toast.success(`Recalculated ${jobIds.length} jobs and ${debtIds.length} debts`);
+    } catch (e: any) {
+      toast.error(e.message || "Recalc failed");
+    } finally {
+      setRecalcing(false);
+    }
+  }
+
   return (
     <div className="container-tight py-6 max-w-3xl space-y-6">
       <h1 className="text-2xl font-extrabold">Settings</h1>
@@ -39,6 +61,12 @@ export default function AdminSettings() {
           <p className="text-xs text-muted-foreground mt-1">Used everywhere the site shows "Leave a Google Review".</p>
         </div>
         <Button onClick={save} disabled={busy}>{busy ? "Saving..." : "Save"}</Button>
+      </Card>
+
+      <Card className="p-5 space-y-2">
+        <h2 className="font-bold">Recalculate All Totals</h2>
+        <p className="text-xs text-muted-foreground">If money numbers ever look stale, this safely recomputes job totals (paid/balance/labor) and debt balances from the actual transactions. Does not delete any data.</p>
+        <Button onClick={recalcAll} disabled={recalcing} variant="outline">{recalcing ? "Recalculating..." : "Recalculate Now"}</Button>
       </Card>
 
       <Card className="p-5 space-y-4">

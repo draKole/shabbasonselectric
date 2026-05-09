@@ -206,6 +206,21 @@ export default function AdminJobDetails() {
           <div><Label>Customer Description</Label><Textarea defaultValue={job.description || ""} onBlur={(e) => update({ description: e.target.value })} /></div>
           <div><Label>Internal Notes</Label><Textarea defaultValue={job.internal_notes || ""} onBlur={(e) => update({ internal_notes: e.target.value })} /></div>
         </Card>
+
+        <Card className="p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold">Contact</h2>
+            {customer && <Link to={`/admin/contacts/${customer.id}`} className="text-xs underline text-muted-foreground">Open contact →</Link>}
+          </div>
+          <p className="text-xs text-muted-foreground">Edits update the contact record everywhere.</p>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>Name</Label><Input defaultValue={customer?.name || ""} onBlur={async (e) => { if (!customer) return; await supabase.from("customers").update({ name: e.target.value }).eq("id", customer.id); toast.success("Contact saved"); load(); }} /></div>
+            <div><Label>Phone</Label><Input defaultValue={customer?.phone || ""} onBlur={async (e) => { if (!customer) return; await supabase.from("customers").update({ phone: e.target.value }).eq("id", customer.id); toast.success("Contact saved"); load(); }} /></div>
+            <div><Label>Email</Label><Input defaultValue={customer?.email || ""} onBlur={async (e) => { if (!customer) return; await supabase.from("customers").update({ email: e.target.value }).eq("id", customer.id); toast.success("Contact saved"); load(); }} /></div>
+            <div><Label>City</Label><Input defaultValue={customer?.city || ""} onBlur={async (e) => { if (!customer) return; await supabase.from("customers").update({ city: e.target.value }).eq("id", customer.id); toast.success("Contact saved"); load(); }} /></div>
+            <div className="col-span-2"><Label>Address</Label><Input defaultValue={customer?.address || ""} onBlur={async (e) => { if (!customer) return; await supabase.from("customers").update({ address: e.target.value }).eq("id", customer.id); toast.success("Contact saved"); load(); }} /></div>
+          </div>
+        </Card>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

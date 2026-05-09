@@ -14,6 +14,8 @@ export default function AdminDashboard() {
   const [recent, setRecent] = useState<any[]>([]);
   const [followUps, setFollowUps] = useState<any[]>([]);
   const [todayTasks, setTodayTasks] = useState<any[]>([]);
+  const [billsPaidMonth, setBillsPaidMonth] = useState(0);
+  const [billsRemaining, setBillsRemaining] = useState(0);
   const { value: googleUrl } = useAppSetting("google_review_url");
   const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
   const mr = useMemo(() => monthRange(monthKey), [monthKey]);
@@ -59,8 +61,20 @@ export default function AdminDashboard() {
         .order("due_date", { ascending: true })
         .limit(15);
       setTodayTasks(tasks || []);
+
+      // Bills paid this month vs remaining (paid_on date based)
+      const { data: bills } = await supabase.from("bills").select("amount, due_date, paid, paid_on");
+      const bills_arr = bills || [];
+      const paid = bills_arr.filter((b: any) => b.paid && b.paid_on && b.paid_on >= mr.from && b.paid_on <= mr.to)
+        .reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
+      const unpaidThis = bills_arr.filter((b: any) => !b.paid && b.due_date && b.due_date >= mr.from && b.due_date <= mr.to)
+        .reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
+      const pastDue = bills_arr.filter((b: any) => !b.paid && b.due_date && b.due_date < mr.from)
+        .reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
+      setBillsPaidMonth(paid);
+      setBillsRemaining(unpaidThis + pastDue);
     })();
-  }, []);
+  }, [mr.from, mr.to]);
 
   async function completeTask(id: string) {
     const { error } = await supabase.from("job_tasks").update({ status: "done", completed_at: new Date().toISOString() }).eq("id", id);
@@ -119,6 +133,11 @@ export default function AdminDashboard() {
           <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Other expenses" value={`$${money.otherExp.toFixed(0)}`} />
           <MoneyMini icon={<TrendingUp className="h-4 w-4" />} label="NET PROFIT" value={`$${money.netProfit.toFixed(0)}`} highlight />
         </div>
+        <div className="mt-3 grid gap-3 grid-cols-2 sm:grid-cols-3">
+          <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Bills paid this month" value={`$${billsPaidMonth.toFixed(0)}`} />
+          <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Bills remaining" value={`$${billsRemaining.toFixed(0)}`} />
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">Bills are tracked separately from job profit. Net Profit = payments − materials − worker labor − other job expenses.</p>
         {money.netProfit > 0 && activePreset && (
           <div className="mt-3">
             <div className="text-xs text-muted-foreground mb-1">Allocation: {activePreset.name}</div>

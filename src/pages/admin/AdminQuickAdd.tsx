@@ -17,6 +17,9 @@ export default function AdminQuickAdd() {
   const customerId = params.get("customer_id");
   const [busy, setBusy] = useState(false);
   const [existingCustomer, setExistingCustomer] = useState<any>(null);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [contactSearch, setContactSearch] = useState("");
+  const [showSuggest, setShowSuggest] = useState(false);
   const [v, setV] = useState({
     name: "", phone: "", address: "", city: "Columbus",
     job_type: "electrical_repair", status: "scheduled",
@@ -31,15 +34,38 @@ export default function AdminQuickAdd() {
   });
 
   useEffect(() => {
+    supabase.from("customers").select("id, name, phone, email, address, city").order("created_at", { ascending: false })
+      .then(({ data }) => setAllCustomers(data || []));
+  }, []);
+
+  function attachContact(c: any) {
+    setExistingCustomer(c);
+    setV((cur) => ({ ...cur, name: c.name || "", phone: c.phone || "", address: c.address || "", city: c.city || cur.city }));
+    setContactSearch("");
+    setShowSuggest(false);
+  }
+
+  useEffect(() => {
     if (!customerId) return;
-    import("@/integrations/supabase/client").then(({ supabase }) =>
-      supabase.from("customers").select("*").eq("id", customerId).single().then(({ data }) => {
-        if (!data) return;
-        setExistingCustomer(data);
-        setV((cur) => ({ ...cur, name: data.name || "", phone: data.phone || "", address: data.address || "", city: data.city || cur.city }));
-      })
-    );
+    supabase.from("customers").select("*").eq("id", customerId).single().then(({ data }) => {
+      if (data) attachContact(data);
+    });
   }, [customerId]);
+
+  // Phone match suggestion (if typing a new contact and phone matches an existing one)
+  const phoneDigits = (v.phone || "").replace(/\D/g, "").slice(-10);
+  const phoneMatch = !existingCustomer && phoneDigits.length >= 7
+    ? allCustomers.find((c) => (c.phone || "").replace(/\D/g, "").slice(-10) === phoneDigits)
+    : null;
+
+  const suggestions = contactSearch.trim().length >= 1
+    ? allCustomers.filter((c) => {
+        const s = contactSearch.toLowerCase();
+        return (c.name || "").toLowerCase().includes(s)
+          || (c.phone || "").includes(s)
+          || (c.address || "").toLowerCase().includes(s);
+      }).slice(0, 8)
+    : [];
 
   const total = Number(v.job_total || 0);
   const paid = Number(v.amount_paid || 0);
@@ -53,11 +79,24 @@ export default function AdminQuickAdd() {
     try {
       let cId = existingCustomer?.id;
       if (!cId) {
-        const { data: c, error: ce } = await supabase.from("customers").insert({
+        // Auto-attach to phone match if not yet attached
+        const pd = (v.phone || "").replace(/\D/g, "").slice(-10);
+        const match = pd.length >= 7 ? allCustomers.find((c) => (c.phone || "").replace(/\D/g, "").slice(-10) === pd) : null;
+        if (match) {
+          cId = match.id;
+        } else {
+          const { data: c, error: ce } = await supabase.from("customers").insert({
+            name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
+          }).select().single();
+          if (ce) throw ce;
+          cId = c.id;
+        }
+      }
+      // Sync any contact field tweaks back to the customer record
+      if (cId) {
+        await supabase.from("customers").update({
           name: v.name, phone: v.phone || null, address: v.address || null, city: v.city || null,
-        }).select().single();
-        if (ce) throw ce;
-        cId = c.id;
+        }).eq("id", cId);
       }
 
       const { data: j, error: je } = await supabase.from("jobs").insert({
@@ -102,9 +141,38 @@ export default function AdminQuickAdd() {
   return (
     <div className="container-tight py-6 max-w-2xl">
       <h1 className="text-2xl font-extrabold mb-4">Quick Add Job</h1>
-      {existingCustomer && (
-        <div className="mb-3 text-sm rounded-md bg-success/10 border border-success/30 p-3">
-          Adding job for existing contact: <b>{existingCustomer.name}</b>
+      {existingCustomer ? (
+        <div className="mb-3 text-sm rounded-md bg-success/10 border border-success/30 p-3 flex items-center justify-between gap-2">
+          <div>Adding job for: <b>{existingCustomer.name}</b> {existingCustomer.phone && <span className="text-muted-foreground">· {existingCustomer.phone}</span>}</div>
+          <Button type="button" size="sm" variant="outline" onClick={() => { setExistingCustomer(null); setV((cur) => ({ ...cur, name: "", phone: "", address: "" })); }}>Change</Button>
+        </div>
+      ) : (
+        <Card className="p-3 mb-3 space-y-2">
+          <Label className="text-xs font-bold uppercase text-muted-foreground">Pick existing contact (or fill new below)</Label>
+          <div className="relative">
+            <Input
+              placeholder="Search name, phone, address..."
+              value={contactSearch}
+              onChange={(e) => { setContactSearch(e.target.value); setShowSuggest(true); }}
+              onFocus={() => setShowSuggest(true)}
+            />
+            {showSuggest && suggestions.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-popover border border-border rounded-md shadow-md max-h-64 overflow-auto">
+                {suggestions.map((c) => (
+                  <button type="button" key={c.id} onClick={() => attachContact(c)} className="w-full text-left p-2 hover:bg-muted text-sm border-b border-border last:border-0">
+                    <div className="font-semibold">{c.name}</div>
+                    <div className="text-xs text-muted-foreground">{c.phone}{c.address ? ` · ${c.address}` : ""}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </Card>
+      )}
+      {phoneMatch && !existingCustomer && (
+        <div className="mb-3 text-sm rounded-md bg-secondary/10 border border-secondary/30 p-3 flex items-center justify-between gap-2">
+          <div>This phone matches existing contact <b>{phoneMatch.name}</b>. Attach to them?</div>
+          <Button type="button" size="sm" onClick={() => attachContact(phoneMatch)}>Attach</Button>
         </div>
       )}
       <form onSubmit={save}>
