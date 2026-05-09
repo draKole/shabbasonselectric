@@ -133,6 +133,11 @@ export default function AdminDashboard() {
           <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Other expenses" value={`$${money.otherExp.toFixed(0)}`} />
           <MoneyMini icon={<TrendingUp className="h-4 w-4" />} label="NET PROFIT" value={`$${money.netProfit.toFixed(0)}`} highlight />
         </div>
+        <div className="mt-3 grid gap-3 grid-cols-2 sm:grid-cols-3">
+          <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Bills paid this month" value={`$${billsPaidMonth.toFixed(0)}`} />
+          <MoneyMini icon={<Receipt className="h-4 w-4" />} label="Bills remaining" value={`$${billsRemaining.toFixed(0)}`} />
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-2">Bills are tracked separately from job profit. Net Profit = payments − materials − worker labor − other job expenses.</p>
         {money.netProfit > 0 && activePreset && (
           <div className="mt-3">
             <div className="text-xs text-muted-foreground mb-1">Allocation: {activePreset.name}</div>
