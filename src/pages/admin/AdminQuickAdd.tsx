@@ -16,6 +16,7 @@ export default function AdminQuickAdd() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const customerId = params.get("customer_id");
+  const { settings } = useGlobalSettings();
   const [busy, setBusy] = useState(false);
   const [existingCustomer, setExistingCustomer] = useState<any>(null);
   const [allCustomers, setAllCustomers] = useState<any[]>([]);
