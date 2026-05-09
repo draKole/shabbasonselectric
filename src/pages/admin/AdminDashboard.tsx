@@ -61,8 +61,20 @@ export default function AdminDashboard() {
         .order("due_date", { ascending: true })
         .limit(15);
       setTodayTasks(tasks || []);
+
+      // Bills paid this month vs remaining (paid_on date based)
+      const { data: bills } = await supabase.from("bills").select("amount, due_date, paid, paid_on");
+      const bills_arr = bills || [];
+      const paid = bills_arr.filter((b: any) => b.paid && b.paid_on && b.paid_on >= mr.from && b.paid_on <= mr.to)
+        .reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
+      const unpaidThis = bills_arr.filter((b: any) => !b.paid && b.due_date && b.due_date >= mr.from && b.due_date <= mr.to)
+        .reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
+      const pastDue = bills_arr.filter((b: any) => !b.paid && b.due_date && b.due_date < mr.from)
+        .reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
+      setBillsPaidMonth(paid);
+      setBillsRemaining(unpaidThis + pastDue);
     })();
-  }, []);
+  }, [mr.from, mr.to]);
 
   async function completeTask(id: string) {
     const { error } = await supabase.from("job_tasks").update({ status: "done", completed_at: new Date().toISOString() }).eq("id", id);
