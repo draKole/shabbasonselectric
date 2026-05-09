@@ -59,12 +59,15 @@ export default function AdminMoney() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
         <Stat icon={<DollarSign className="h-5 w-5" />} label="Gross collected" value={fmt(monthData.collected)} sub={`${monthData.paymentCount} payments`} />
         <Stat icon={<Receipt className="h-5 w-5" />} label="Materials (me)" value={fmt(monthData.materialsMe)} sub="Subtracted" />
-        <Stat icon={<Users className="h-5 w-5" />} label="Worker labor" value={fmt(monthData.workerLabor)} sub="Subtracted" />
+        <Stat icon={<Users className="h-5 w-5" />} label={monthData.includeBurden ? "Worker base" : "Worker labor"} value={fmt(monthData.workerLabor)} sub={monthData.includeBurden ? "Base pay" : "Subtracted"} />
+        {monthData.includeBurden && (
+          <Stat icon={<Users className="h-5 w-5" />} label="Worker burden" value={fmt(monthData.workerBurden)} sub="True cost add-on" />
+        )}
         <Stat icon={<Receipt className="h-5 w-5" />} label="Other expenses" value={fmt(monthData.otherExp)} sub="Subtracted" />
-        <Stat icon={<TrendingUp className="h-5 w-5" />} label="NET PROFIT" value={fmt(monthData.netProfit)} sub="What you keep" highlight />
+        <Stat icon={<TrendingUp className="h-5 w-5" />} label="NET PROFIT" value={fmt(monthData.netProfit)} sub={monthData.includeBurden ? "After true labor cost" : "What you keep"} highlight />
       </div>
 
       <Card className="p-5">
