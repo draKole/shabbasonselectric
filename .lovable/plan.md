@@ -1,95 +1,71 @@
-# Shabba & Sons Electric — Website + Job Management System
+# Shabba Electric Hub — Next Improvement Pass
 
-A mobile-first marketing site plus a private admin dashboard you can run your business from on your phone. Built on Lovable Cloud (database, file storage, admin auth).
+Scope: additive only. Will not touch Money Tracker math, Reports, Bills, Debt, Contacts, or working Estimate flows beyond what is listed. No van inventory.
 
-## What customers see
+## 1. Database migration (one migration, additive only)
 
-**Homepage**
-- Hero: "Columbus Electrical Repairs, Panels, Lighting & New Construction Wiring" with Schedule, Call (614-671-8528), and Text buttons
-- Trust badges: Father & Son, 40+ Years Combined, Permit-Ready, Free Estimates
-- Service cards grid (12 services)
-- Recent Work portfolio preview (pulled live from completed jobs marked public)
-- Reviews preview (pulled live from approved reviews)
-- Final CTA strip
-- Sticky mobile bar always visible: Call · Text · Schedule
+New columns / tables:
+- `workers`: add `is_owner boolean default false`, `weekly_salary numeric default 0`, `pay_schedule text default 'weekly'`, `pay_day text default 'friday'`, `pay_mode text default 'hourly'` (`hourly` | `salary` | `both`), `worker_type text default 'helper'` (`helper`|`electrician`|`subcontractor`|`owner`), `onboarding jsonb default '{}'` (insurance, wc, w9, id, ppe, tools, start_date booleans/date), `auth_user_id uuid` (for portal login), `invite_status text default 'none'`.
+- `worker_time_entries`: add `approved boolean default false`, `paid boolean default false`, `paid_at timestamptz`.
+- `job_payments` already tracks customer pay — leave alone.
+- New `app_settings` keys: `owner_worker_id`, `owner_default_hourly`, `owner_weekly_salary`, `owner_pay_day`, `owner_pay_mode`, `owner_pay_reduces_profit`, `estimate_valid_days`, `estimate_default_deposit_pct`, `estimate_discount_label`, `estimate_show_original`, `estimate_show_discount`, `estimate_show_final`, `estimate_show_materials_note`.
+- RLS: add policy on `workers`, `job_tasks`, `worker_time_entries`, `jobs`, `job_photos` so a worker (auth user matching `workers.auth_user_id`) can read/write only their own assigned data. Use a `is_worker_for_job(_uid, _job_id)` security-definer function.
 
-**Services page** — Each service (Repairs, Panels, Lighting, Outlets/GFCI, New Construction/Remodel, Contractor/Permit Support) gets its own section with description, common work bullets, and a "Schedule" button.
+## 2. Owner-as-worker
 
-**Schedule Service page** — The booking form. Sections: Customer info → Job location → Job type → Urgency → Preferred date/time + alternate → Description + photo upload (optional, up to 10 photos at 10MB each) → Materials/permit/power questions → Customer type → Estimate preferences. Submits to the database as a New Lead. Confirmation screen with your phone number for urgent jobs.
+- Settings → "Owner pay" card: pick which worker is the owner, set hourly + weekly salary + pay day + pay mode + reduces-profit toggle.
+- `useMonthMoney`: split labor into `ownerPay` vs `workerLabor` based on `is_owner`. Add `businessNetAfterOwner` and `personalOwnerPay`.
+- Money Tracker + Reports: show new rows (Owner pay, Business net after owner pay, Personal owner pay).
 
-**Portfolio page** — Filterable by category (New Construction, Panels, Service Changes, Lighting, Outlets/GFCI, Troubleshooting, Remodel, Commercial, Contractor Support, Inspection-Ready). Each project: before/after photos, city/neighborhood, services performed, optional linked review.
+## 3. Worker portal foundation
 
-**Reviews page** — All approved reviews with rating, customer name, neighborhood, service type, date. Link out to leave a Google review.
+- Routes: `/worker/login`, `/worker/dashboard` (public routes outside admin shell).
+- `WorkerLogin.tsx`: email/password (Supabase auth, no signup — invite only).
+- `WorkerDashboard.tsx`: lists jobs where worker has assigned tasks or time entries, shows address/date/scope (NOT money fields), tasks list with complete toggle, "Log hours" form (creates entry with `approved=false`), photo upload to `job-photos`, weekly hours + estimated pay (hours × rate, owner uses owner rate).
+- Admin Workers page: "Send invite" button → calls edge function `worker-invite` that creates auth user via service role, generates random pw, sets `workers.auth_user_id`, returns temp credentials to admin to share. "Reset invite" regenerates. "Deactivate" sets `active=false`.
 
-**Contractor / Permit Support page** — Dedicated page for contractors, landlords, investors. Includes the safety/code disclaimer wording exactly as you wrote it.
+## 4. Estimate builder — discount + clean format
 
-**About + Contact** — Father-and-son story, service area (Columbus + surrounding, no private address), contact form, Call/Text/Schedule buttons.
+- Line item shape extended: `{ title, description, qty, unit_price, discount, final_unit_price, materials_included, customer_supplied }`.
+- AdminEstimates editor: per-line original price, discount amount (or %), auto-calc final. Show original subtotal, total discount, final total, deposit, balance.
+- `EstimateShare.tsx` rewrite of layout to the clean "SCOPE OF WORK — ELECTRICAL" format the user pasted, supporting bullet lists from `description` (split on newlines). Print stylesheet polish. No literal `\n`.
+- Settings toggles control which columns/rows are visible.
 
-## What you see (Admin)
+## 5. Hours approval + payroll
 
-Private, password-protected. You log in with email + password.
+- Admin Workers page: tabs for "Time entries", with filters Pending / Approved / Paid. Bulk approve, mark paid, edit, delete. Weekly total per worker.
+- `useMonthMoney` only counts `approved=true` entries in profit math; pending shown separately on Money Tracker.
 
-**Dashboard** — Top cards: New leads this week · Jobs scheduled this week · Jobs completed this month · Open estimates · Review requests needed · Open balance. Below: a reminders panel (overdue follow-ups, deposits unpaid, leads not contacted in 24h, jobs not updated in 3 days) and a "Quick Add Job" button that creates a job in under 60 seconds from your phone (name, phone, address, type, date/time, price, notes).
+## 6. Application → Worker conversion polish
 
-**Lead Pipeline (Kanban board)** — Drag-and-drop columns: New Lead → Need to Reply → Estimate Scheduled → Estimate Sent → Waiting on Approval → Approved → Deposit Needed → Scheduled → In Progress → Waiting on Inspection → Completed → Paid → Review Requested. Status changes auto-log to the job timeline.
+- AdminApplications convert dialog: add fields for hourly rate, worker_type, onboarding checklist (insurance/wc/w9/id/ppe/tools/start date), and "Send portal invite" checkbox.
 
-**Jobs table** — All jobs with filters and the columns you listed (customer, phone, address, type, status, scheduled date, estimate, balance, permit, inspection, last contact, action).
+## 7. Out of scope (explicit)
 
-**Job Details page** — Everything for one job on one screen: customer info, job info, description + customer/admin photos (before/after), pricing breakdown, permit & inspection tracking (number, type, date, result, corrections), materials (needed, bought, vendor, receipt upload, cost), timeline of every status change. Action buttons: Call, Text (opens iPhone Messages with pre-filled message), Send Estimate, Mark Scheduled, Add to Calendar, Mark Completed, Request Review, Add to Portfolio, Archive.
+- No van/tool inventory. No messaging. No new payroll filing/tax features beyond tracking flags.
 
-**Calendar page** — Day / Week / Month / List views. Color-coded by status (gray/blue/green/yellow/orange/black/red for urgent). Each event shows customer, type, address, time, phone, price, notes. Click → opens job. You can also create non-job events: Estimate, Service Call, Rough-In, Trim-Out, Panel Upgrade, Service Change, Inspection, Material Pickup, Follow-Up, Final Walkthrough.
+## Files touched
 
-**Calendar export (v1)**
-- "Add to Google Calendar" button per job (opens Google's add-event URL pre-filled)
-- "Download .ics" button per job (works with Apple Calendar, Outlook, anything)
-- Subscribable ICS feed URL for the whole calendar — paste once into Google or Apple Calendar and all your jobs auto-update going forward
-- Separate feed URLs by category: Estimates / Active Jobs / Inspections / Material Pickups / Follow-Ups
-- Event format exactly as you specified (title, location, full description with customer/phone/notes/permit/balance)
+New:
+- `supabase/migrations/<ts>_owner_worker_portal.sql`
+- `supabase/functions/worker-invite/index.ts`
+- `src/pages/worker/WorkerLogin.tsx`
+- `src/pages/worker/WorkerDashboard.tsx`
+- `src/components/admin/OwnerPaySettings.tsx`
+- `src/components/admin/WorkerInviteDialog.tsx`
+- `src/components/admin/TimeEntryApproval.tsx`
 
-(Full two-way Google Calendar sync deferred to a later phase per your preference.)
+Edited:
+- `src/App.tsx` (worker routes)
+- `src/lib/useGlobalSettings.ts` (new keys)
+- `src/lib/useMonthMoney.ts` (owner split, approved-only)
+- `src/pages/admin/AdminSettings.tsx` (owner + estimate setting cards)
+- `src/pages/admin/AdminWorkers.tsx` (invite, approval, owner flag)
+- `src/pages/admin/AdminMoney.tsx` + `AdminReports.tsx` (owner pay rows)
+- `src/pages/admin/AdminEstimates.tsx` (line item editor with discount)
+- `src/pages/EstimateShare.tsx` (new clean layout)
+- `src/pages/admin/AdminApplications.tsx` (convert dialog onboarding fields)
 
-**Estimate / Quote Builder** — Templates for Service Call, Panel Upgrade, Service Change, Lighting Install, Outlet/GFCI, Shed Feed, Hot Tub Circuit, Remodel, New Construction, Contractor Support. Builds a clean text-message-ready quote in your exact format. Buttons: Copy Text, Send by SMS (opens Messages app with text pre-filled), Mark Sent, Mark Approved, Convert to Job.
+## Final deliverable
 
-**Review Request Center** — When a job is marked completed, you get prompted "Send review request?" Pre-written Google and Nextdoor message templates (your exact wording). Tap to open Messages with the text pre-filled. Tracks requested/received status, platform, rating, text, and whether to publish to the website.
-
-**Portfolio manager** — One click to promote a completed job to the public portfolio. Choose category, write description, pick before/after photos, toggle public visibility, link a review.
-
-## Design
-
-- Mobile-first (iPhone primary), white main sections, charcoal accents, electric-blue highlights, safety-yellow accents, green for Schedule/Call buttons, gray cards
-- Clean modern contractor feel — professional, local, real, not corporate or AI-looking
-- Sticky Call/Text/Schedule bar on mobile across all customer pages
-
-## SEO
-
-Page titles and meta as you specified. Schema markup for LocalBusiness (Electrician), service area (Columbus, OH), phone, hours. Targeting your keyword list (Electrician Columbus Ohio, panel upgrade, GFCI, etc.).
-
-## Build order
-
-1. Database + admin login
-2. Homepage + Services + Schedule form (so you can start collecting leads immediately)
-3. Admin dashboard + Jobs table + Job Details + Quick Add
-4. Calendar page + ICS export/feed + Add-to-Google buttons
-5. Pipeline Kanban board
-6. Estimate builder
-7. Review Request Center
-8. Portfolio (public + manager)
-9. Contractor/Permit Support, About, Contact, Reviews pages
-10. SEO polish + sticky mobile bar QA
-
-## Technical details
-
-- **Stack**: React + Vite + Tailwind + shadcn/ui, React Router, Lovable Cloud (Postgres + Storage + Auth)
-- **Auth**: Email/password for admin only; customer side is public. Roles stored in a separate `user_roles` table (never on profiles) with a `has_role()` security definer function for RLS — only admins can read/write jobs, customers, estimates, etc.
-- **Storage**: Two buckets — `customer-uploads` (public-read for portfolio use, write via signed policies from the booking form) and `job-photos` (admin-only)
-- **Database tables**: `customers`, `jobs`, `job_photos`, `estimates`, `reviews`, `calendar_events`, `reminders`, `portfolio_projects`, `job_timeline_events`, `user_roles` — schemas as you outlined, with RLS on every table
-- **ICS feed**: Edge function generates RFC-5545 ICS on demand from `jobs` + `calendar_events`. Feed URL includes a per-admin secret token so only you can subscribe. Category-specific feeds use a query param.
-- **SMS**: All "Text" buttons use `sms:` links with `?body=` pre-fill so iPhone Messages opens ready to send. No Twilio cost.
-- **Reminders**: Computed on dashboard load from job timestamps and statuses (no background jobs needed in v1).
-- **Photo uploads**: Client-side validation (max 10 files, 10MB each, image types only), uploaded directly to Storage with signed URLs.
-
-## Things I'll need from you after build
-
-- Your Google Business review link (for the review request templates and Reviews page button)
-- Confirm whether your son needs his own admin login
-- Real photos for the homepage hero and a few portfolio examples (or I'll use placeholders you can swap)
+Checklist of: existed/left alone, fixed, newly added, needs manual testing, known issues.

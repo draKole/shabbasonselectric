@@ -16,6 +16,21 @@ export type GlobalSettings = {
   review_request_text: string;
   google_review_url: string;
   estimate_default_terms: string;
+  // Owner pay
+  owner_worker_id: string;
+  owner_default_hourly: string;
+  owner_weekly_salary: string;
+  owner_pay_day: string; // monday..sunday
+  owner_pay_mode: string; // hourly | salary | both
+  owner_pay_reduces_profit: string; // yes | no
+  // Estimate display defaults
+  estimate_valid_days: string;
+  estimate_default_deposit_pct: string;
+  estimate_discount_label: string;
+  estimate_show_original: string;
+  estimate_show_discount: string;
+  estimate_show_final: string;
+  estimate_show_materials_note: string;
 };
 
 export const SETTINGS_DEFAULTS: GlobalSettings = {
@@ -35,6 +50,19 @@ export const SETTINGS_DEFAULTS: GlobalSettings = {
   google_review_url: "",
   estimate_default_terms:
     "50% deposit due to schedule. Balance due upon completion. Estimate valid for 30 days.",
+  owner_worker_id: "",
+  owner_default_hourly: "75",
+  owner_weekly_salary: "0",
+  owner_pay_day: "friday",
+  owner_pay_mode: "hourly",
+  owner_pay_reduces_profit: "yes",
+  estimate_valid_days: "30",
+  estimate_default_deposit_pct: "50",
+  estimate_discount_label: "Customer Discount",
+  estimate_show_original: "yes",
+  estimate_show_discount: "yes",
+  estimate_show_final: "yes",
+  estimate_show_materials_note: "yes",
 };
 
 export function useGlobalSettings() {

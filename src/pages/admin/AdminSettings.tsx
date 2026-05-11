@@ -118,6 +118,62 @@ export default function AdminSettings() {
         <Button onClick={saveAll} disabled={busy}>{busy ? "Saving..." : "Save Settings"}</Button>
       </Card>
 
+      <Card className="p-5 space-y-4">
+        <div>
+          <h2 className="font-bold">Owner Pay (Owner-Worker)</h2>
+          <p className="text-xs text-muted-foreground">You can pay yourself from the business as an owner-worker. This shows separately from regular worker labor.</p>
+        </div>
+        <OwnerPicker value={form.owner_worker_id} onChange={(v) => set("owner_worker_id", v)} />
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div><Label>Owner hourly rate ($)</Label><Input type="number" value={form.owner_default_hourly} onChange={(e) => set("owner_default_hourly", e.target.value)} /></div>
+          <div><Label>Weekly salary/draw ($)</Label><Input type="number" value={form.owner_weekly_salary} onChange={(e) => set("owner_weekly_salary", e.target.value)} /></div>
+          <div><Label>Pay day</Label>
+            <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.owner_pay_day} onChange={(e) => set("owner_pay_day", e.target.value)}>
+              {["monday","tuesday","wednesday","thursday","friday","saturday","sunday"].map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+          </div>
+          <div><Label>Pay mode</Label>
+            <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.owner_pay_mode} onChange={(e) => set("owner_pay_mode", e.target.value)}>
+              <option value="hourly">Hourly only</option>
+              <option value="salary">Weekly salary only</option>
+              <option value="both">Both (hourly + weekly draw)</option>
+            </select>
+          </div>
+          <label className="sm:col-span-2 flex items-center justify-between rounded-md border border-border p-3 cursor-pointer">
+            <div><div className="font-semibold text-sm">Owner pay reduces business profit?</div>
+              <div className="text-xs text-muted-foreground">Recommended ON — owner pay is a real business expense.</div></div>
+            <Switch checked={isYes(form.owner_pay_reduces_profit)} onCheckedChange={(c) => set("owner_pay_reduces_profit", c ? "yes" : "no")} />
+          </label>
+        </div>
+        <Button onClick={saveAll} disabled={busy} variant="outline">Save Owner Settings</Button>
+      </Card>
+
+      <Card className="p-5 space-y-4">
+        <div>
+          <h2 className="font-bold">Estimate Defaults</h2>
+          <p className="text-xs text-muted-foreground">Controls what shows on customer-facing estimates.</p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div><Label>Valid days</Label><Input type="number" value={form.estimate_valid_days} onChange={(e) => set("estimate_valid_days", e.target.value)} /></div>
+          <div><Label>Default deposit %</Label><Input type="number" value={form.estimate_default_deposit_pct} onChange={(e) => set("estimate_default_deposit_pct", e.target.value)} /></div>
+          <div><Label>Discount label</Label><Input value={form.estimate_discount_label} onChange={(e) => set("estimate_discount_label", e.target.value)} /></div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          {([
+            ["estimate_show_original","Show original price"],
+            ["estimate_show_discount","Show discount line"],
+            ["estimate_show_final","Show final agreed price"],
+            ["estimate_show_materials_note","Show materials note"],
+          ] as [keyof GlobalSettings, string][]).map(([k,label]) => (
+            <label key={k} className="flex items-center justify-between rounded-md border border-border p-3 cursor-pointer">
+              <div className="font-semibold text-sm">{label}</div>
+              <Switch checked={isYes(form[k])} onCheckedChange={(c) => set(k, c ? "yes" : "no")} />
+            </label>
+          ))}
+        </div>
+        <Button onClick={saveAll} disabled={busy} variant="outline">Save Estimate Settings</Button>
+      </Card>
+
       <Card className="p-5 space-y-2">
         <h2 className="font-bold">Recalculate All Totals</h2>
         <p className="text-xs text-muted-foreground">If money numbers ever look stale, this safely recomputes job totals (paid/balance/labor) and debt balances from the actual transactions. Does not delete any data.</p>
@@ -171,6 +227,7 @@ function PresetEditor({ preset, onChange }: { preset: Preset; onChange: () => vo
     toast.success("Preset saved");
     onChange();
   }
+
   async function makeActive() {
     await supabase.from("allocation_presets").update({ is_active: false }).neq("id", preset.id);
     await supabase.from("allocation_presets").update({ is_active: true }).eq("id", preset.id);
@@ -221,6 +278,30 @@ function PresetEditor({ preset, onChange }: { preset: Preset; onChange: () => vo
           <Button size="sm" onClick={save} disabled={!valid} className="gap-1"><Check className="h-3.5 w-3.5" /> Save</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function OwnerPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [workers, setWorkers] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from("workers").select("id, full_name, is_owner").order("full_name").then(({ data }) => setWorkers(data || []));
+  }, []);
+  return (
+    <div>
+      <Label>Which worker is the owner?</Label>
+      <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={value} onChange={async (e) => {
+        const id = e.target.value;
+        onChange(id);
+        if (id) {
+          await supabase.from("workers").update({ is_owner: false }).neq("id", id);
+          await supabase.from("workers").update({ is_owner: true, worker_type: "owner" }).eq("id", id);
+        }
+      }}>
+        <option value="">— None —</option>
+        {workers.map((w) => <option key={w.id} value={w.id}>{w.full_name}{w.is_owner ? " (current owner)" : ""}</option>)}
+      </select>
+      <p className="text-xs text-muted-foreground mt-1">If the owner-worker isn't in the list, add them in Workers first.</p>
     </div>
   );
 }

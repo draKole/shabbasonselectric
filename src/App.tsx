@@ -39,6 +39,8 @@ import AdminTemplates from "./pages/admin/AdminTemplates";
 import Careers from "./pages/Careers";
 import AdminReports from "./pages/admin/AdminReports";
 import EstimateShare from "./pages/EstimateShare";
+import WorkerLogin from "./pages/worker/WorkerLogin";
+import WorkerDashboard from "./pages/worker/WorkerDashboard";
 
 const queryClient = new QueryClient();
 
@@ -62,6 +64,8 @@ const App = () => (
               <Route path="/careers" element={<Careers />} />
             </Route>
             <Route path="/estimate/:token" element={<EstimateShare />} />
+            <Route path="/worker/login" element={<WorkerLogin />} />
+            <Route path="/worker/dashboard" element={<WorkerDashboard />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
