@@ -1119,34 +1119,43 @@ export type Database = {
       worker_time_entries: {
         Row: {
           amount: number
+          approved: boolean
           created_at: string
           hourly_rate: number
           hours: number
           id: string
           job_id: string | null
           notes: string | null
+          paid: boolean
+          paid_at: string | null
           work_date: string
           worker_id: string
         }
         Insert: {
           amount?: number
+          approved?: boolean
           created_at?: string
           hourly_rate?: number
           hours?: number
           id?: string
           job_id?: string | null
           notes?: string | null
+          paid?: boolean
+          paid_at?: string | null
           work_date?: string
           worker_id: string
         }
         Update: {
           amount?: number
+          approved?: boolean
           created_at?: string
           hourly_rate?: number
           hours?: number
           id?: string
           job_id?: string | null
           notes?: string | null
+          paid?: boolean
+          paid_at?: string | null
           work_date?: string
           worker_id?: string
         }
@@ -1155,53 +1164,80 @@ export type Database = {
       workers: {
         Row: {
           active: boolean
+          auth_user_id: string | null
           created_at: string
           email: string | null
           full_name: string
           hourly_rate: number
           id: string
           insurance_pct: number
+          invite_status: string
+          is_owner: boolean
           notes: string | null
+          onboarding: Json
+          pay_day: string
+          pay_mode: string
+          pay_schedule: string
           pay_type: string
           phone: string | null
           ppe_monthly: number
           role: string
           tax_pct: number
           updated_at: string
+          weekly_salary: number
+          worker_type: string
           workers_comp_pct: number
         }
         Insert: {
           active?: boolean
+          auth_user_id?: string | null
           created_at?: string
           email?: string | null
           full_name: string
           hourly_rate?: number
           id?: string
           insurance_pct?: number
+          invite_status?: string
+          is_owner?: boolean
           notes?: string | null
+          onboarding?: Json
+          pay_day?: string
+          pay_mode?: string
+          pay_schedule?: string
           pay_type?: string
           phone?: string | null
           ppe_monthly?: number
           role?: string
           tax_pct?: number
           updated_at?: string
+          weekly_salary?: number
+          worker_type?: string
           workers_comp_pct?: number
         }
         Update: {
           active?: boolean
+          auth_user_id?: string | null
           created_at?: string
           email?: string | null
           full_name?: string
           hourly_rate?: number
           id?: string
           insurance_pct?: number
+          invite_status?: string
+          is_owner?: boolean
           notes?: string | null
+          onboarding?: Json
+          pay_day?: string
+          pay_mode?: string
+          pay_schedule?: string
           pay_type?: string
           phone?: string | null
           ppe_monthly?: number
           role?: string
           tax_pct?: number
           updated_at?: string
+          weekly_salary?: number
+          worker_type?: string
           workers_comp_pct?: number
         }
         Relationships: []
@@ -1220,6 +1256,11 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_worker_for_job: {
+        Args: { _job_id: string; _uid: string }
+        Returns: boolean
+      }
+      my_worker_id: { Args: never; Returns: string }
       recompute_debt_balance: { Args: { _debt_id: string }; Returns: undefined }
       recompute_job_totals: { Args: { _job_id: string }; Returns: undefined }
       recompute_job_worker_labor: {
