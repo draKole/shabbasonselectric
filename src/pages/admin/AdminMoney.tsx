@@ -59,16 +59,23 @@ export default function AdminMoney() {
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat icon={<DollarSign className="h-5 w-5" />} label="Gross collected" value={fmt(monthData.collected)} sub={`${monthData.paymentCount} payments`} />
         <Stat icon={<Receipt className="h-5 w-5" />} label="Materials (me)" value={fmt(monthData.materialsMe)} sub="Subtracted" />
-        <Stat icon={<Users className="h-5 w-5" />} label={monthData.includeBurden ? "Worker base" : "Worker labor"} value={fmt(monthData.workerLabor)} sub={monthData.includeBurden ? "Base pay" : "Subtracted"} />
+        <Stat icon={<Users className="h-5 w-5" />} label={monthData.includeBurden ? "Worker base" : "Worker labor"} value={fmt(monthData.workerLabor)} sub={monthData.includeBurden ? "Base pay (non-owner)" : "Non-owner workers"} />
         {monthData.includeBurden && (
           <Stat icon={<Users className="h-5 w-5" />} label="Worker burden" value={fmt(monthData.workerBurden)} sub="True cost add-on" />
         )}
+        <Stat icon={<Users className="h-5 w-5" />} label="Owner pay" value={fmt(monthData.ownerPay)} sub={monthData.ownerReducesProfit ? "Reduces business profit" : "Tracked separately"} />
         <Stat icon={<Receipt className="h-5 w-5" />} label="Other expenses" value={fmt(monthData.otherExp)} sub="Subtracted" />
-        <Stat icon={<TrendingUp className="h-5 w-5" />} label="NET PROFIT" value={fmt(monthData.netProfit)} sub={monthData.includeBurden ? "After true labor cost" : "What you keep"} highlight />
+        <Stat icon={<TrendingUp className="h-5 w-5" />} label="BUSINESS NET PROFIT" value={fmt(monthData.netProfit)} sub={monthData.ownerReducesProfit ? "After owner pay" : "Owner pay not deducted"} highlight />
+        <Stat icon={<DollarSign className="h-5 w-5" />} label="Personal owner pay" value={fmt(monthData.ownerPay)} sub="What you paid yourself" />
       </div>
+      {monthData.pendingHoursCost > 0 && (
+        <Card className="p-3 border-secondary/40 bg-secondary/5 text-sm">
+          <b>{fmt(monthData.pendingHoursCost)}</b> in pending (un-approved) worker hours — not yet counted in profit.
+        </Card>
+      )}
 
       <Card className="p-5">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
