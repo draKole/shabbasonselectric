@@ -39,6 +39,8 @@ import AdminTemplates from "./pages/admin/AdminTemplates";
 import Careers from "./pages/Careers";
 import AdminReports from "./pages/admin/AdminReports";
 import EstimateShare from "./pages/EstimateShare";
+import WorkerLogin from "./pages/worker/WorkerLogin";
+import WorkerDashboard from "./pages/worker/WorkerDashboard";
 
 const queryClient = new QueryClient();
 
