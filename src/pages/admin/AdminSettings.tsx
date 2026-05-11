@@ -226,7 +226,32 @@ function PresetEditor({ preset, onChange }: { preset: Preset; onChange: () => vo
     if (error) return toast.error(error.message);
     toast.success("Preset saved");
     onChange();
-  }
+}
+
+function OwnerPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [workers, setWorkers] = useState<any[]>([]);
+  useEffect(() => {
+    supabase.from("workers").select("id, full_name, is_owner").order("full_name").then(({ data }) => setWorkers(data || []));
+  }, []);
+  return (
+    <div>
+      <Label>Which worker is the owner?</Label>
+      <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={value} onChange={async (e) => {
+        const id = e.target.value;
+        onChange(id);
+        // Sync workers.is_owner so labor split is accurate
+        if (id) {
+          await supabase.from("workers").update({ is_owner: false }).neq("id", id);
+          await supabase.from("workers").update({ is_owner: true, worker_type: "owner" }).eq("id", id);
+        }
+      }}>
+        <option value="">— None —</option>
+        {workers.map((w) => <option key={w.id} value={w.id}>{w.full_name}{w.is_owner ? " (current owner)" : ""}</option>)}
+      </select>
+      <p className="text-xs text-muted-foreground mt-1">If the owner-worker isn't in the list, add them in Workers first.</p>
+    </div>
+  );
+}
   async function makeActive() {
     await supabase.from("allocation_presets").update({ is_active: false }).neq("id", preset.id);
     await supabase.from("allocation_presets").update({ is_active: true }).eq("id", preset.id);
