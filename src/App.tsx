@@ -64,6 +64,8 @@ const App = () => (
               <Route path="/careers" element={<Careers />} />
             </Route>
             <Route path="/estimate/:token" element={<EstimateShare />} />
+            <Route path="/worker/login" element={<WorkerLogin />} />
+            <Route path="/worker/dashboard" element={<WorkerDashboard />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
