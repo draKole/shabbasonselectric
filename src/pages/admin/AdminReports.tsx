@@ -99,8 +99,9 @@ export default function AdminReports() {
         <Stat label="Worker base pay" value={`$${money.workerLabor.toFixed(0)}`} />
         {burdenOn && <Stat label="Worker burden" value={`$${money.workerBurden.toFixed(0)}`} />}
         {burdenOn && <Stat label="True worker cost" value={`$${money.workerTrueCost.toFixed(0)}`} />}
+        <Stat label="Owner pay" value={`$${money.ownerPay.toFixed(0)}`} />
         <Stat label="Other expenses" value={`$${money.otherExp.toFixed(0)}`} />
-        <Stat label="NET PROFIT" value={`$${money.netProfit.toFixed(0)}`} highlight />
+        <Stat label="BUSINESS NET (after owner)" value={`$${money.netProfit.toFixed(0)}`} highlight />
       </div>
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
