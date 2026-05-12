@@ -1,12 +1,14 @@
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, DollarSign, Users, Settings, Receipt, CreditCard, BookUser, HardHat, ClipboardList, BarChart3 } from "lucide-react";
+import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, DollarSign, Users, Settings, Receipt, CreditCard, BookUser, HardHat, ClipboardList, BarChart3, Building2, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BUSINESS } from "@/lib/business";
 
 const NAV = [
   { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/admin/business", label: "Business", icon: Building2 },
+  { to: "/admin/personal", label: "Personal", icon: User },
   { to: "/admin/jobs", label: "Jobs", icon: Briefcase },
   { to: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
   { to: "/admin/calendar", label: "Calendar", icon: Calendar },
@@ -18,7 +20,6 @@ const NAV = [
   { to: "/admin/bills", label: "Bills", icon: Receipt },
   { to: "/admin/debt", label: "Debt", icon: CreditCard },
   { to: "/admin/workers", label: "Workers", icon: HardHat },
-  // Messages tab removed per request
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },
   { to: "/admin/applications", label: "Applications", icon: Users },
