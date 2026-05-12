@@ -253,7 +253,8 @@ export default function AdminWorkers() {
                 <div className="min-w-0">
                   <div className="font-bold flex items-center gap-2 flex-wrap">
                     {wk.full_name}
-                    <span className="text-xs text-muted-foreground font-normal">· {wk.role} · ${Number(wk.hourly_rate).toFixed(0)}/hr · true ${trueRate.toFixed(0)}/hr</span>
+                    {wk.is_owner && <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success">OWNER</span>}
+                    <span className="text-xs text-muted-foreground font-normal">· {wk.role} · ${Number(wk.hourly_rate).toFixed(0)}/hr</span>
                     {!wk.active && <span className="text-xs px-1.5 py-0.5 rounded bg-muted">inactive</span>}
                   </div>
                   {wk.phone && <div className="text-xs text-muted-foreground">{wk.phone}{wk.email ? ` · ${wk.email}` : ""}</div>}
@@ -266,11 +267,14 @@ export default function AdminWorkers() {
                   <Button size="sm" variant="ghost" className="text-destructive" onClick={() => delWorker(wk)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
+              <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
+                <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Hours/wk</div><div className="font-bold text-base">{hoursThisWeek(wk.id).toFixed(1)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Earned</div><div className="font-bold text-base">${b.earned.toFixed(0)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Paid out</div><div className="font-bold text-base">${b.paid.toFixed(0)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Owe worker</div><div className={`font-bold text-base ${b.balance > 0 ? "text-destructive" : "text-success"}`}>${b.balance.toFixed(0)}</div></div>
               </div>
+              <div className="text-[10px] text-muted-foreground mt-1">True hourly cost ≈ ${trueRate.toFixed(0)} (includes extra worker cost)</div>
+
 
               {/* time entries for this worker */}
               <div className="mt-3 pt-2 border-t border-border space-y-1">
