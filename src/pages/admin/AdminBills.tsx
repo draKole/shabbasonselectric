@@ -17,6 +17,7 @@ type Bill = {
   amount: number;
   due_date: string | null;
   category: string;
+  bill_type: string;
   priority: string;
   paid: boolean;
   paid_on: string | null;
@@ -26,10 +27,11 @@ type Bill = {
 };
 
 const CATEGORIES = ["personal", "business", "family", "debt", "housing", "vehicle", "phone", "insurance", "storage", "credit card", "other"];
+const BILL_TYPES = ["business", "personal"];
 const PRIORITIES = ["critical", "important", "normal", "low"];
 const FREQS = ["weekly", "monthly", "yearly"];
 
-const empty: Partial<Bill> = { name: "", amount: 0, category: "other", priority: "normal", paid: false, recurring: false };
+const empty: Partial<Bill> = { name: "", amount: 0, category: "other", bill_type: "business", priority: "normal", paid: false, recurring: false };
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
