@@ -21,16 +21,18 @@ type Debt = {
   interest_rate: number | null;
   priority: string;
   debt_type: string;
+  debt_scope: string;
   notes: string | null;
   paid_off: boolean;
 };
 type Payment = { id: string; debt_id: string; amount: number; paid_on: string; method: string; notes: string | null };
 
 const TYPES = ["credit card", "personal loan", "family debt", "business debt", "emergency debt", "vehicle", "other"];
+const SCOPES = ["personal", "business"];
 const PRIORITIES = ["critical", "high", "normal", "low"];
 const METHODS = ["cash", "card", "check", "zelle", "venmo", "cashapp", "transfer", "other"];
 
-const empty: Partial<Debt> = { name: "", starting_balance: 0, minimum_payment: 0, priority: "normal", debt_type: "other" };
+const empty: Partial<Debt> = { name: "", starting_balance: 0, minimum_payment: 0, priority: "normal", debt_type: "other", debt_scope: "personal" };
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -67,6 +69,7 @@ export default function AdminDebt() {
       interest_rate: editing.interest_rate ? Number(editing.interest_rate) : null,
       priority: editing.priority,
       debt_type: editing.debt_type,
+      debt_scope: editing.debt_scope || "personal",
       notes: editing.notes || null,
     };
     Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
@@ -144,18 +147,24 @@ export default function AdminDebt() {
                 <div><Label>Interest %</Label><Input type="number" value={editing.interest_rate ?? ""} onChange={(e) => setEditing({ ...editing, interest_rate: Number(e.target.value) })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
+                <div><Label>Scope</Label>
+                  <Select value={editing.debt_scope || "personal"} onValueChange={(v) => setEditing({ ...editing, debt_scope: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{SCOPES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Type</Label>
                   <Select value={editing.debt_type} onValueChange={(v) => setEditing({ ...editing, debt_type: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{TYPES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Priority</Label>
-                  <Select value={editing.priority} onValueChange={(v) => setEditing({ ...editing, priority: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{PRIORITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
+              </div>
+              <div><Label>Priority</Label>
+                <Select value={editing.priority} onValueChange={(v) => setEditing({ ...editing, priority: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PRIORITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
               <div><Label>Notes</Label><Textarea value={editing.notes || ""} onChange={(e) => setEditing({ ...editing, notes: e.target.value })} /></div>
               <Button onClick={save} className="w-full">Save</Button>
@@ -171,38 +180,51 @@ export default function AdminDebt() {
         <Card className="p-4"><div className="text-xs text-muted-foreground">Next due</div><div className="text-base font-bold">{next ? `${next.name} · ${next.due_date}` : "—"}</div></Card>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {debts.map((d) => {
-          const start = Number(d.starting_balance) || 1;
-          const paid = start - Number(d.current_balance);
-          const pct = Math.min(100, Math.max(0, (paid / start) * 100));
-          return (
-            <Card key={d.id} className={`p-4 ${d.paid_off ? "border-success/40 bg-success/5" : ""}`}>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <div className="font-bold flex items-center gap-2">{d.name}
-                    <span className="text-xs px-1.5 py-0.5 rounded bg-muted">{d.debt_type}</span>
-                    {d.priority === "critical" && <span className="text-xs px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground">critical</span>}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Min {fmt(Number(d.minimum_payment))} {d.due_date && `· due ${d.due_date}`} {d.interest_rate && `· ${d.interest_rate}%`}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-xl font-extrabold">{fmt(Number(d.current_balance))}</div>
-                  <div className="text-xs text-muted-foreground">of {fmt(start)}</div>
-                </div>
-              </div>
-              <Progress value={pct} className="mt-3" />
-              <div className="text-xs text-muted-foreground mt-1">{pct.toFixed(0)}% paid down</div>
-              <div className="flex gap-1 mt-3 flex-wrap">
-                <Button size="sm" onClick={() => openNewPayment(d)} className="bg-success text-success-foreground hover:bg-success/90 gap-1"><DollarSign className="h-3.5 w-3.5" /> Log Payment</Button>
-                <Button size="sm" variant="outline" onClick={() => { setEditing(d); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
-                <Button size="sm" variant="outline" onClick={() => del(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
-              </div>
-            </Card>
-          );
-        })}
-        {debts.length === 0 && <div className="text-sm text-muted-foreground p-3">No debts tracked yet.</div>}
-      </div>
+      {(["personal","business"] as const).map((scope) => {
+        const list = debts.filter((d) => (d.debt_scope || "personal") === scope);
+        const sumScope = list.reduce((s, d) => s + Number(d.current_balance), 0);
+        return (
+          <div key={scope} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-sm uppercase text-muted-foreground">{scope} debt</h2>
+              <span className="text-xs text-muted-foreground">Total: <b className="text-foreground">{fmt(sumScope)}</b></span>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {list.map((d) => {
+                const start = Number(d.starting_balance) || 1;
+                const paid = start - Number(d.current_balance);
+                const pct = Math.min(100, Math.max(0, (paid / start) * 100));
+                return (
+                  <Card key={d.id} className={`p-4 ${d.paid_off ? "border-success/40 bg-success/5" : ""}`}>
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-bold flex items-center gap-2">{d.name}
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${scope === "business" ? "bg-primary/10 text-primary" : "bg-accent text-accent-foreground"}`}>{scope}</span>
+                          <span className="text-xs px-1.5 py-0.5 rounded bg-muted">{d.debt_type}</span>
+                          {d.priority === "critical" && <span className="text-xs px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground">critical</span>}
+                        </div>
+                        <div className="text-xs text-muted-foreground">Min {fmt(Number(d.minimum_payment))} {d.due_date && `· due ${d.due_date}`} {d.interest_rate && `· ${d.interest_rate}%`}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xl font-extrabold">{fmt(Number(d.current_balance))}</div>
+                        <div className="text-xs text-muted-foreground">of {fmt(start)}</div>
+                      </div>
+                    </div>
+                    <Progress value={pct} className="mt-3" />
+                    <div className="text-xs text-muted-foreground mt-1">{pct.toFixed(0)}% paid down</div>
+                    <div className="flex gap-1 mt-3 flex-wrap">
+                      <Button size="sm" onClick={() => openNewPayment(d)} className="bg-success text-success-foreground hover:bg-success/90 gap-1"><DollarSign className="h-3.5 w-3.5" /> Log Payment</Button>
+                      <Button size="sm" variant="outline" onClick={() => { setEditing(d); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button size="sm" variant="outline" onClick={() => del(d.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  </Card>
+                );
+              })}
+              {list.length === 0 && <div className="text-sm text-muted-foreground p-3">No {scope} debts tracked.</div>}
+            </div>
+          </div>
+        );
+      })}
 
       <Card className="p-4">
         <h2 className="font-bold mb-2">Recent Payments</h2>

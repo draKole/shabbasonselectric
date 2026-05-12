@@ -41,6 +41,8 @@ import AdminReports from "./pages/admin/AdminReports";
 import EstimateShare from "./pages/EstimateShare";
 import WorkerLogin from "./pages/worker/WorkerLogin";
 import WorkerDashboard from "./pages/worker/WorkerDashboard";
+import AdminBusiness from "./pages/admin/AdminBusiness";
+import AdminPersonal from "./pages/admin/AdminPersonal";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +81,8 @@ const App = () => (
               <Route path="portfolio" element={<AdminPortfolio />} />
               {/* messages route removed */}
               <Route path="money" element={<AdminMoney />} />
+              <Route path="business" element={<AdminBusiness />} />
+              <Route path="personal" element={<AdminPersonal />} />
               <Route path="applications" element={<AdminApplications />} />
               <Route path="bills" element={<AdminBills />} />
               <Route path="debt" element={<AdminDebt />} />
