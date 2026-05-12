@@ -16,6 +16,9 @@ export default function AdminWorkers() {
   const [pays, setPays] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
   const [showInactive, setShowInactive] = useState(false);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"name" | "hours_week" | "balance" | "role">("name");
   const [editing, setEditing] = useState<any | null>(null);
   const [adding, setAdding] = useState(false);
   const empty = { full_name: "", phone: "", email: "", role: "helper", pay_type: "hourly", hourly_rate: "25", tax_pct: "0", workers_comp_pct: "0", insurance_pct: "0", ppe_monthly: "0", notes: "" };
@@ -34,6 +37,11 @@ export default function AdminWorkers() {
     setWorkers(a.data || []); setTime(b.data || []); setPays(c.data || []); setJobs(d.data || []);
   }
   useEffect(() => { load(); }, []);
+
+  function hoursThisWeek(id: string) {
+    const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
+    return time.filter((t) => t.worker_id === id && t.work_date >= weekAgo).reduce((s, t) => s + Number(t.hours || 0), 0);
+  }
 
   function openEdit(wk: any) {
     setEditing(wk);
