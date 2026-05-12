@@ -21,6 +21,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          scope: string
           updated_at: string
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          scope?: string
           updated_at?: string
         }
         Update: {
@@ -37,6 +39,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          scope?: string
           updated_at?: string
         }
         Relationships: []
@@ -62,6 +65,7 @@ export type Database = {
       bills: {
         Row: {
           amount: number
+          bill_type: string
           category: string
           created_at: string
           due_date: string | null
@@ -77,6 +81,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          bill_type?: string
           category?: string
           created_at?: string
           due_date?: string | null
@@ -92,6 +97,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          bill_type?: string
           category?: string
           created_at?: string
           due_date?: string | null
@@ -253,6 +259,7 @@ export type Database = {
         Row: {
           created_at: string
           current_balance: number
+          debt_scope: string
           debt_type: string
           due_date: string | null
           id: string
@@ -268,6 +275,7 @@ export type Database = {
         Insert: {
           created_at?: string
           current_balance?: number
+          debt_scope?: string
           debt_type?: string
           due_date?: string | null
           id?: string
@@ -283,6 +291,7 @@ export type Database = {
         Update: {
           created_at?: string
           current_balance?: number
+          debt_scope?: string
           debt_type?: string
           due_date?: string | null
           id?: string
