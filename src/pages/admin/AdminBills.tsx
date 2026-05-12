@@ -39,6 +39,7 @@ export default function AdminBills() {
   const [bills, setBills] = useState<Bill[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Bill>>(empty);
+  const [filter, setFilter] = useState<"all" | "business" | "personal" | "paid" | "unpaid" | "past_due">("all");
 
   async function load() {
     const { data } = await supabase.from("bills").select("*").order("due_date", { ascending: true, nullsFirst: false });
@@ -53,6 +54,7 @@ export default function AdminBills() {
       amount: Number(editing.amount) || 0,
       due_date: editing.due_date || null,
       category: editing.category || "other",
+      bill_type: editing.bill_type || "business",
       priority: editing.priority || "normal",
       paid: !!editing.paid,
       paid_on: editing.paid ? (editing.paid_on || new Date().toISOString().slice(0, 10)) : null,
