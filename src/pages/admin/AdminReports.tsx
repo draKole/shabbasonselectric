@@ -4,9 +4,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useMonthMoney, monthRange } from "@/lib/useMonthMoney";
-import { useGlobalSettings, isYes } from "@/lib/useGlobalSettings";
-import { Download } from "lucide-react";
+import { useBillsTotals, useDebtTotals } from "@/lib/useBillsTotals";
+import { useGlobalSettings, isYes, num } from "@/lib/useGlobalSettings";
+import { usePersonalExpenses } from "@/lib/usePersonalExpenses";
+import { Download, ChevronDown } from "lucide-react";
 
 function csv(rows: (string | number)[][]) {
   return rows.map((r) => r.map((c) => {
@@ -26,46 +29,59 @@ export default function AdminReports() {
   const burdenOn = isYes(settings.burden_in_reports);
   const [month, setMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const mr = useMemo(() => monthRange(month), [month]);
-  const money = useMonthMoney(mr.from, mr.to, burdenOn ? "force-on" : "force-off");
-  const [billsPaidMonth, setBillsPaidMonth] = useState(0);
-  const [debtPaymentsMonth, setDebtPaymentsMonth] = useState(0);
+  const m = useMonthMoney(mr.from, mr.to, burdenOn ? "force-on" : "force-off");
+  const bizBills = useBillsTotals(mr.from, mr.to, "business");
+  const personalBills = useBillsTotals(mr.from, mr.to, "personal");
+  const bizDebt = useDebtTotals("business", mr.from, mr.to);
+  const personalDebt = useDebtTotals("personal", mr.from, mr.to);
+  const exp = usePersonalExpenses(mr.from, mr.to);
   const [openBalances, setOpenBalances] = useState<any[]>([]);
-  const [billsDue, setBillsDue] = useState<any[]>([]);
-  const [debts, setDebts] = useState<any[]>([]);
   const [reviewsNeeded, setReviewsNeeded] = useState<any[]>([]);
 
   useEffect(() => {
     (async () => {
-      const [{ data: ob }, { data: bd }, { data: d }, { data: rn }, { data: bp }, { data: dp }] = await Promise.all([
+      const [{ data: ob }, { data: rn }] = await Promise.all([
         supabase.from("jobs").select("id, balance_due, customers(name, phone)").gt("balance_due", 0).eq("archived", false),
-        supabase.from("bills").select("*").eq("paid", false).order("due_date", { ascending: true }),
-        supabase.from("debts").select("*").eq("paid_off", false),
         supabase.from("jobs").select("id, job_type, updated_at, customers(name, phone)")
           .in("status", ["completed", "paid"]).eq("review_requested", false),
-        supabase.from("bills").select("amount, paid_on").eq("paid", true).gte("paid_on", mr.from).lte("paid_on", mr.to),
-        supabase.from("debt_payments").select("amount, paid_on").gte("paid_on", mr.from).lte("paid_on", mr.to),
       ]);
-      setOpenBalances(ob || []); setBillsDue(bd || []); setDebts(d || []); setReviewsNeeded(rn || []);
-      setBillsPaidMonth((bp || []).reduce((s: number, b: any) => s + Number(b.amount || 0), 0));
-      setDebtPaymentsMonth((dp || []).reduce((s: number, p: any) => s + Number(p.amount || 0), 0));
+      setOpenBalances(ob || []); setReviewsNeeded(rn || []);
     })();
-  }, [month, mr.from, mr.to]);
+  }, [month]);
+
+  const totalLabor = m.workerLabor + m.ownerPay + (burdenOn ? m.workerBurden : 0);
+  const businessProfit = m.netProfit;
+  const bizTaxReserve = businessProfit * num(settings.business_tax_reserve_pct) / 100;
+  const ownerDraw = exp.ownerDraw;
+  const bizCash = businessProfit - bizBills.paid - ownerDraw;
+  const personalIncome = m.ownerPay + ownerDraw + exp.otherIncome;
+  const personalTaxReserve = personalIncome * num(settings.personal_tax_reserve_pct) / 100;
+  const personalCash = personalIncome - personalBills.paid - personalDebt.paidThisMonth - exp.totalExpenses;
 
   function exportMonth() {
     const rows: (string | number)[][] = [
-      ["Metric", "Amount"],
-      ["Gross payments", money.collected.toFixed(2)],
-      ["Materials (paid by me)", money.materialsMe.toFixed(2)],
-      ["Worker base pay", money.workerLabor.toFixed(2)],
+      ["Section", "Metric", "Amount"],
+      ["Business", "Gross collected", m.collected.toFixed(2)],
+      ["Business", "Materials", m.materialsMe.toFixed(2)],
+      ["Business", "Non-owner worker pay", m.workerLabor.toFixed(2)],
+      ["Business", "Owner-worker pay", m.ownerPay.toFixed(2)],
+      ["Business", "Extra worker cost", m.workerBurden.toFixed(2)],
+      ["Business", "Total labor cost", totalLabor.toFixed(2)],
+      ["Business", "Other job expenses", m.otherExp.toFixed(2)],
+      ["Business", "Business profit", businessProfit.toFixed(2)],
+      ["Business", "Bills paid", bizBills.paid.toFixed(2)],
+      ["Business", "Debt paid", bizDebt.paidThisMonth.toFixed(2)],
+      ["Business", "Tax reserve", bizTaxReserve.toFixed(2)],
+      ["Business", "Cash after obligations", bizCash.toFixed(2)],
+      ["Personal", "Owner pay", m.ownerPay.toFixed(2)],
+      ["Personal", "Owner draw", ownerDraw.toFixed(2)],
+      ["Personal", "Other income", exp.otherIncome.toFixed(2)],
+      ["Personal", "Tax reserve", personalTaxReserve.toFixed(2)],
+      ["Personal", "Personal expenses", exp.totalExpenses.toFixed(2)],
+      ["Personal", "Personal bills paid", personalBills.paid.toFixed(2)],
+      ["Personal", "Personal debt paid", personalDebt.paidThisMonth.toFixed(2)],
+      ["Personal", "Cash remaining", personalCash.toFixed(2)],
     ];
-    if (burdenOn) {
-      rows.push(["Worker burden cost", money.workerBurden.toFixed(2)]);
-      rows.push(["True worker cost", money.workerTrueCost.toFixed(2)]);
-    }
-    rows.push(["Other expenses", money.otherExp.toFixed(2)]);
-    rows.push(["Net profit", money.netProfit.toFixed(2)]);
-    rows.push(["Bills paid", billsPaidMonth.toFixed(2)]);
-    rows.push(["Debt paid", debtPaymentsMonth.toFixed(2)]);
     dl(`shabba-money-${month}.csv`, csv(rows));
   }
   function exportOpenBalances() {
@@ -73,11 +89,6 @@ export default function AdminReports() {
     openBalances.forEach((j: any) => rows.push([j.customers?.name || "", j.customers?.phone || "", Number(j.balance_due || 0).toFixed(2)]));
     dl(`shabba-open-balances.csv`, csv(rows));
   }
-
-  const totalDebt = debts.reduce((s: number, d: any) => s + Number(d.current_balance || 0), 0);
-  const startDebt = debts.reduce((s: number, d: any) => s + Number(d.starting_balance || 0), 0);
-  const debtPaidPct = startDebt > 0 ? Math.round(((startDebt - totalDebt) / startDebt) * 100) : 0;
-  const billsRemaining = billsDue.reduce((s: number, b: any) => s + Number(b.amount || 0), 0);
 
   return (
     <div className="container-tight py-6 space-y-4">
@@ -87,29 +98,60 @@ export default function AdminReports() {
           <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} />
         </div>
         <Button variant="outline" onClick={exportMonth} className="gap-1"><Download className="h-4 w-4" /> Export month CSV</Button>
-        <div className="text-xs text-muted-foreground ml-auto">
-          Reports use actual dated transactions, not job status.
-          {burdenOn && <span className="ml-2 px-2 py-0.5 rounded bg-secondary/15 text-secondary">Burden ON</span>}
+        <div className="text-xs text-muted-foreground ml-auto">Reports use actual dated transactions.</div>
+      </div>
+
+      {/* Business Report */}
+      <Card className="p-5 space-y-3">
+        <h2 className="font-bold">Business Report</h2>
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+          <Stat label="Gross collected" value={fmt(m.collected)} />
+          <Stat label="Materials" value={fmt(m.materialsMe)} />
+          <Stat label="Non-owner pay" value={fmt(m.workerLabor)} />
+          <Stat label="Owner-worker pay" value={fmt(m.ownerPay)} />
+          <Stat label="Extra worker cost" value={fmt(m.workerBurden)} />
+          <Stat label="Total labor cost" value={fmt(totalLabor)} />
+          <Stat label="Other job expenses" value={fmt(m.otherExp)} />
+          <Stat label="Business profit" value={fmt(businessProfit)} highlight />
+          <Stat label="Business bills paid" value={fmt(bizBills.paid)} />
+          <Stat label="Business bills remaining" value={fmt(bizBills.remaining)} />
+          <Stat label="Business debt paid" value={fmt(bizDebt.paidThisMonth)} />
+          <Stat label="Business tax reserve" value={fmt(bizTaxReserve)} />
+          <Stat label="Business cash" value={fmt(bizCash)} />
         </div>
-      </div>
+      </Card>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Gross payments" value={`$${money.collected.toFixed(0)}`} />
-        <Stat label="Materials (me)" value={`$${money.materialsMe.toFixed(0)}`} />
-        <Stat label="Worker base pay" value={`$${money.workerLabor.toFixed(0)}`} />
-        {burdenOn && <Stat label="Worker burden" value={`$${money.workerBurden.toFixed(0)}`} />}
-        {burdenOn && <Stat label="True worker cost" value={`$${money.workerTrueCost.toFixed(0)}`} />}
-        <Stat label="Owner pay" value={`$${money.ownerPay.toFixed(0)}`} />
-        <Stat label="Other expenses" value={`$${money.otherExp.toFixed(0)}`} />
-        <Stat label="BUSINESS NET (after owner)" value={`$${money.netProfit.toFixed(0)}`} highlight />
-      </div>
+      {/* Personal Report */}
+      <Card className="p-5 space-y-3">
+        <h2 className="font-bold">Personal Report</h2>
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-6">
+          <Stat label="Owner pay" value={fmt(m.ownerPay)} />
+          <Stat label="Owner draw" value={fmt(ownerDraw)} />
+          <Stat label="Other personal income" value={fmt(exp.otherIncome)} />
+          <Stat label="Personal tax reserve" value={fmt(personalTaxReserve)} />
+          <Stat label="Personal expenses" value={fmt(exp.totalExpenses)} />
+          <Stat label="Personal bills paid" value={fmt(personalBills.paid)} />
+          <Stat label="Personal debt paid" value={fmt(personalDebt.paidThisMonth)} />
+          <Stat label="Personal cash remaining" value={fmt(personalCash)} highlight />
+        </div>
+      </Card>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        <Stat label="Bills paid (month)" value={`$${billsPaidMonth.toFixed(0)}`} />
-        <Stat label="Bills remaining" value={`$${billsRemaining.toFixed(0)}`} />
-        <Stat label="Debt paid (month)" value={`$${debtPaymentsMonth.toFixed(0)}`} />
-        <Stat label="Debt balance" value={`$${totalDebt.toFixed(0)}`} />
-      </div>
+      {/* Labor Report */}
+      <Card className="p-5 space-y-3">
+        <h2 className="font-bold">Labor Report</h2>
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          <Stat label="Owner labor" value={fmt(m.ownerPay)} />
+          <Stat label="Non-owner labor" value={fmt(m.workerLabor)} />
+          <Stat label="Extra worker cost" value={fmt(m.workerBurden)} />
+          <Stat label="Total labor cost" value={fmt(totalLabor)} highlight />
+        </div>
+        <Collapsible>
+          <CollapsibleTrigger className="text-xs underline text-muted-foreground flex items-center gap-1"><ChevronDown className="h-3 w-3" /> What is "Extra Worker Cost"?</CollapsibleTrigger>
+          <CollapsibleContent className="mt-2 text-xs text-muted-foreground p-3 rounded bg-muted">
+            Extra Worker Cost includes tax reserve, workers comp, insurance, PPE, tools, and other costs of having workers. This is for planning — not payroll filing.
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
 
       <Card className="p-4">
         <div className="flex items-center justify-between mb-2">
@@ -129,30 +171,6 @@ export default function AdminReports() {
       </Card>
 
       <Card className="p-4">
-        <h2 className="font-bold mb-2">Bills due ({billsDue.length})</h2>
-        <div className="text-sm space-y-1">
-          {billsDue.slice(0, 25).map((b: any) => (
-            <div key={b.id} className="flex justify-between gap-2 border-b border-border py-1">
-              <span className="truncate">{b.name} {b.due_date ? `· ${b.due_date}` : ""}</span>
-              <b>${Number(b.amount || 0).toFixed(0)}</b>
-            </div>
-          ))}
-          {billsDue.length === 0 && <div className="text-muted-foreground">All bills paid.</div>}
-        </div>
-        <div className="mt-2 text-sm text-right">Total: <b>${billsDue.reduce((s: number, b: any) => s + Number(b.amount || 0), 0).toFixed(0)}</b></div>
-      </Card>
-
-      <Card className="p-4">
-        <h2 className="font-bold mb-2">Debt payoff progress</h2>
-        <div className="text-sm">
-          Total remaining: <b>${totalDebt.toFixed(0)}</b> of <b>${startDebt.toFixed(0)}</b> · {debtPaidPct}% paid
-        </div>
-        <div className="mt-2 h-2 rounded bg-muted overflow-hidden">
-          <div className="h-full bg-success" style={{ width: `${debtPaidPct}%` }} />
-        </div>
-      </Card>
-
-      <Card className="p-4">
         <h2 className="font-bold mb-2">Review requests needed ({reviewsNeeded.length})</h2>
         <div className="text-sm space-y-1">
           {reviewsNeeded.slice(0, 25).map((r: any) => (
@@ -167,6 +185,8 @@ export default function AdminReports() {
     </div>
   );
 }
+
+function fmt(n: number) { return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }); }
 
 function Stat({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
