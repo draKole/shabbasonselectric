@@ -16,6 +16,9 @@ export default function AdminWorkers() {
   const [pays, setPays] = useState<any[]>([]);
   const [jobs, setJobs] = useState<any[]>([]);
   const [showInactive, setShowInactive] = useState(false);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"name" | "hours_week" | "balance" | "role">("name");
   const [editing, setEditing] = useState<any | null>(null);
   const [adding, setAdding] = useState(false);
   const empty = { full_name: "", phone: "", email: "", role: "helper", pay_type: "hourly", hourly_rate: "25", tax_pct: "0", workers_comp_pct: "0", insurance_pct: "0", ppe_monthly: "0", notes: "" };
@@ -34,6 +37,11 @@ export default function AdminWorkers() {
     setWorkers(a.data || []); setTime(b.data || []); setPays(c.data || []); setJobs(d.data || []);
   }
   useEffect(() => { load(); }, []);
+
+  function hoursThisWeek(id: string) {
+    const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
+    return time.filter((t) => t.worker_id === id && t.work_date >= weekAgo).reduce((s, t) => s + Number(t.hours || 0), 0);
+  }
 
   function openEdit(wk: any) {
     setEditing(wk);
@@ -131,7 +139,26 @@ export default function AdminWorkers() {
     return { earned, paid, balance: earned - paid };
   }
 
-  const visibleWorkers = workers.filter((wk) => showInactive || wk.active);
+  const visibleWorkers = workers
+    .filter((wk) => showInactive || wk.active)
+    .filter((wk) => {
+      if (roleFilter === "all") return true;
+      if (roleFilter === "owner") return wk.is_owner;
+      return (wk.role || "").toLowerCase() === roleFilter || (wk.worker_type || "").toLowerCase() === roleFilter;
+    })
+    .filter((wk) => {
+      if (!search.trim()) return true;
+      const s = search.toLowerCase();
+      return (wk.full_name || "").toLowerCase().includes(s) || (wk.phone || "").includes(s) || (wk.email || "").toLowerCase().includes(s);
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "hours_week": return hoursThisWeek(b.id) - hoursThisWeek(a.id);
+        case "balance": return balanceFor(b.id).balance - balanceFor(a.id).balance;
+        case "role": return (a.role || "").localeCompare(b.role || "");
+        default: return (a.full_name || "").localeCompare(b.full_name || "");
+      }
+    });
 
   return (
     <div className="container-tight py-6 space-y-4">
@@ -142,6 +169,38 @@ export default function AdminWorkers() {
           <Button onClick={openNew} size="sm" className="gap-1"><Plus className="h-4 w-4" />Add Worker</Button>
         </div>
       </div>
+
+      <Card className="p-3 flex flex-wrap gap-2 items-end">
+        <div className="flex-1 min-w-[160px]">
+          <Label className="text-xs">Search</Label>
+          <Input placeholder="Name, phone, email…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="w-40">
+          <Label className="text-xs">Role / type</Label>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {["all", "owner", "helper", "apprentice", "journeyman", "subcontractor", "electrician", "other"].map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-44">
+          <Label className="text-xs">Sort by</Label>
+          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="hours_week">Hours this week</SelectItem>
+              <SelectItem value="balance">Balance owed</SelectItem>
+              <SelectItem value="role">Role</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="text-xs text-muted-foreground ml-auto">{visibleWorkers.length} of {workers.length}</div>
+      </Card>
+
 
       <Dialog open={adding} onOpenChange={(o) => { setAdding(o); if (!o) { setEditing(null); setW(empty); } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
@@ -194,7 +253,8 @@ export default function AdminWorkers() {
                 <div className="min-w-0">
                   <div className="font-bold flex items-center gap-2 flex-wrap">
                     {wk.full_name}
-                    <span className="text-xs text-muted-foreground font-normal">· {wk.role} · ${Number(wk.hourly_rate).toFixed(0)}/hr · true ${trueRate.toFixed(0)}/hr</span>
+                    {wk.is_owner && <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success">OWNER</span>}
+                    <span className="text-xs text-muted-foreground font-normal">· {wk.role} · ${Number(wk.hourly_rate).toFixed(0)}/hr</span>
                     {!wk.active && <span className="text-xs px-1.5 py-0.5 rounded bg-muted">inactive</span>}
                   </div>
                   {wk.phone && <div className="text-xs text-muted-foreground">{wk.phone}{wk.email ? ` · ${wk.email}` : ""}</div>}
@@ -207,11 +267,14 @@ export default function AdminWorkers() {
                   <Button size="sm" variant="ghost" className="text-destructive" onClick={() => delWorker(wk)}><Trash2 className="h-4 w-4" /></Button>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2 mt-2 text-xs">
+              <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
+                <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Hours/wk</div><div className="font-bold text-base">{hoursThisWeek(wk.id).toFixed(1)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Earned</div><div className="font-bold text-base">${b.earned.toFixed(0)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Paid out</div><div className="font-bold text-base">${b.paid.toFixed(0)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Owe worker</div><div className={`font-bold text-base ${b.balance > 0 ? "text-destructive" : "text-success"}`}>${b.balance.toFixed(0)}</div></div>
               </div>
+              <div className="text-[10px] text-muted-foreground mt-1">True hourly cost ≈ ${trueRate.toFixed(0)} (includes extra worker cost)</div>
+
 
               {/* time entries for this worker */}
               <div className="mt-3 pt-2 border-t border-border space-y-1">

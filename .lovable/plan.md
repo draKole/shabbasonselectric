@@ -1,169 +1,84 @@
-# Business vs Personal Separation — Implementation Plan
+# Cleanup & Simplify Business/Personal Money System
 
-Goal: cleanly separate business money (company revenue/expenses/profit) from personal money (owner pay/draw, personal bills/debt) without breaking any existing working feature. Most existing pages stay; we add typing, two new top-level tabs, owner-hours, dual allocations, and estimate polish.
+Scope: UI cleanup + one new feature (Personal Expense logger). No table renames. No rebuilds.
 
----
+## 1. Terminology change (UI only)
+Across `AdminMoney`, `AdminReports`, `AdminBusiness`, `AdminDashboard`:
+- "Worker Burden" → **"Extra Worker Cost"** with helper text: *"Includes tax reserve, workers comp, insurance, PPE, tools, and other costs of having workers."*
+- Replace "True Worker Cost" labels with **"Total Worker Cost"** = Worker Pay + Extra Worker Cost.
+- Standardize labels:
+  - **"Owner-Worker Pay"** on business side
+  - **"Owner Pay / Personal Income"** on personal side
+  - **"Owner Draw"** for transfers business→personal
 
-## 1. Database changes (one migration)
+## 2. Dashboard fix (`AdminDashboard.tsx`)
+Currently shows labor as $0 when only owner-worker pay exists. Restructure into two sections:
 
-Add columns only — no table renames, no destructive changes.
+**A. Business Snapshot** — Gross collected, Materials, Non-owner pay, Owner-worker pay, **Total labor cost** (sum), Other job expenses, Business profit, Business bills remaining, Business cash after bills.
 
-- `bills`: `bill_type text not null default 'business'` (`'business' | 'personal'`)
-- `debts`: `debt_scope text not null default 'personal'` (`'business' | 'personal'`)  
-  (using `debt_scope` to avoid clashing with existing `debt_type` category column)
-- `worker_time_entries`: already has `worker_id` + `approved` + `paid` — owner hours reuse this table via the owner worker row (no schema change needed). Add `is_owner_entry boolean generated... ` — skip; we already join to `workers.is_owner`.
-- `allocation_presets`: add `scope text not null default 'business'` (`'business' | 'personal'`) so presets belong to one side.
-- `app_settings` keys (data inserts, not schema): `default_billing_rate=125`, `default_helper_rate=20`, `default_experienced_helper_rate=27`, `business_tax_reserve_pct`, `personal_tax_reserve_pct`. Owner pay keys already exist.
-- Backfill: `update bills set bill_type='business' where bill_type is null;` `update debts set debt_scope='personal' where debt_scope is null;`
-- Seed two default allocation presets if none exist for each scope.
+**B. Personal Snapshot** — Owner pay earned, Owner draw taken, Total personal money, Personal bills remaining, Personal debt remaining, Personal allocations link.
 
-No RLS changes needed (admin-only tables).
+Remove duplicate owner pay cards.
 
----
+## 3. Business page cleanup (`AdminBusiness.tsx`)
+Group cards into 5 ordered sections matching money flow:
+1. Money In — Gross collected
+2. Job Costs — Materials, Non-owner pay, Owner-worker pay, Extra worker cost, Other job expenses
+3. Business Profit (highlight)
+4. Business Obligations — Bills paid, Bills remaining, Debt payments, Tax reserve, Payroll reserve
+5. Business Cash — Profit − bills − draws
 
-## 2. Settings page (`AdminSettings.tsx`)
+Update default business allocation buckets seed (via insert tool, only if missing): Tax reserve, Payroll reserve, Insurance/Workers Comp, Tools/Equipment, Marketing, Business Emergency Fund, Permits/Software/Admin, Business Savings/Growth.
 
-Reorganize into clearly labeled cards (no destructive removal):
+## 4. Personal Expense logger (NEW)
+**New table** `personal_expenses` (migration):
+- id, expense_date, amount, category (text), method (text), notes, recurring (bool), related_bill_id (uuid nullable), created_at, updated_at
+- RLS: admins manage
 
-- **Business Rates**: Default Billing Rate ($125), Default helper rate, Experienced helper rate range.
-- **Owner Pay** (already exists): clarify label "Owner-worker pay rate" with help text "What you pay yourself when you work — separate from billing rate".
-- **Worker Burden**: existing tax/burden/WC/insurance/PPE — unchanged.
-- **Tax Reserves**: business tax %, personal tax %.
-- **Business Allocations**: edit preset where `scope='business'` (add/edit/delete buckets, must total 100%).
-- **Personal Allocations**: edit preset where `scope='personal'`.
-- **Recalculate All Totals** button: extend to recompute job worker labor, owner pay, bills paid, debt balances.
+Add new hook `usePersonalExpenses(from,to)` returning paid total + list.
 
----
+Update `AdminPersonal.tsx`:
+- Add expense logger card (form: date, amount, category dropdown, method, recurring, notes) + recent list.
+- Add Owner Draw tracking (use existing `worker_payments` filtered to owner_worker_id = type 'draw'? Simpler: add `owner_draws` separately) — for now treat as a manual tracked draw using new field on `personal_expenses` with category 'owner_draw_in'? **Simpler & non-breaking**: store draws as a row in `personal_expenses` with category `owner_draw` but income flag. Cleaner: add a tiny `personal_income` table too.
 
-## 3. New Admin tabs
+Decision (keep small): add **one** table `personal_ledger` with `kind` ('expense'|'draw'|'income') so we don't proliferate. But user said "Personal Expense Logger" — keep simple table named `personal_expenses` and add an optional `is_income` bool for owner draws / manual income.
 
-Add two top-level nav entries in `AdminLayout.tsx`:
+Personal cash formula:
+`owner_pay + owner_draw + manual_income − personal_bills_paid − personal_debt_paid − personal_expenses`
 
-- **Business** → `/admin/business` (new `AdminBusiness.tsx`)
-- **Personal** → `/admin/personal` (new `AdminPersonal.tsx`)
+## 5. Tax reserve display
+Already have `business_tax_reserve_pct` and `personal_tax_reserve_pct`. Add clear cards:
+- Personal page: "Personal tax reserve" = ownerPay × pct
+- Business page: "Business tax reserve" = profit × pct
+- Reports: show under each section. No double-deduction (these are display-only reserves, not subtracted from cash again).
 
-Existing tabs (Jobs, Pipeline, Calendar, Contacts, Estimates, Templates, Money, Reports, Bills, Debt, Workers, Reviews, Portfolio, Applications, Settings, Setup) stay. The existing **Money** tab remains as a combined power-user view but gets two clearly labeled sections (see §5).
+## 6. Money Tracker cleanup (`AdminMoney.tsx`)
+Restructure into 3 collapsible sections using `Collapsible`:
+- **A. Business Money** cards + expandable Labor Detail
+- **B. Personal Money** cards
+- **C. Allocations** — two panels (Business / Personal)
 
-### `AdminBusiness.tsx` cards
-Gross revenue (month/week), open balances, completed-unpaid jobs, materials, worker labor, worker burden (if enabled), owner-worker pay, other job expenses, business bills paid/remaining, business debt remaining, **Business job profit**, **Business cash after bills**, business allocation split.
+Remove duplicate owner-pay cards.
 
-### `AdminPersonal.tsx` cards
-Owner pay (week/month), owner draw, personal bills due/paid/remaining, personal debt remaining/paid this month, personal emergency fund, personal allocation split. Formula: `owner pay − personal bills paid − personal debt paid = personal remaining cash`.
+## 7. Reports cleanup (`AdminReports.tsx`)
+Same labels. Three collapsible sections:
+- Business Report
+- Personal Report  
+- Labor Report (with Extra worker cost breakdown collapsible)
 
----
+## 8. Workers page cleanup (`AdminWorkers.tsx`)
+- Add search input
+- Add filter chips: Active / Inactive / Pending / Owner / Helper / Electrician / Contractor
+- Add sort dropdown: Name / Hours this week / Balance owed / Role
+- Compact card: Name, Role, Status, Rate, Hours this week, Balance owed, buttons (Log Hours, Pay, View)
+- Detail tabs only if simple — otherwise just a section toggle. Keep existing detail in place; reduce list noise.
 
-## 4. Owner-worker hours on jobs
+## Files touched
+- New migration: create `personal_expenses` table + seed business allocation preset (if not exists)
+- New: `src/lib/usePersonalExpenses.ts`
+- Edit: `AdminDashboard.tsx`, `AdminBusiness.tsx`, `AdminPersonal.tsx`, `AdminMoney.tsx`, `AdminReports.tsx`, `AdminWorkers.tsx`
 
-Owner hours already work — owner is just a `worker` row with `is_owner=true` logging through `JobWorkerHours`. Add a dedicated **Owner Hours** card on `AdminJobDetails.tsx` that filters that worker's entries, defaults the rate to `owner_default_hourly` ($50), and shows `owner pay = hours × $50`. Edit/delete supported via existing entry UI.
-
-Job money breakdown card on the job page:
-```
-Payments collected
-− Materials (paid by me)
-− Worker labor (non-owner, approved)
-− Owner-worker pay (owner, approved)
-− Other expenses
-= Business job profit
-```
-
----
-
-## 5. Money Tracker restructure (`AdminMoney.tsx`)
-
-Split into two sections on the same page (no new route needed beyond Business/Personal tabs):
-
-**A. Business Money** — gross, materials, worker pay, burden (toggle), owner pay, other exp, business bills paid/remaining, **business job profit**, business allocations on profit.
-
-**B. Personal Money** — owner pay earned, owner draw, personal bills paid/remaining, personal debt paid/remaining, personal allocations on owner pay.
-
-Reuse `useMonthMoney` (already splits `ownerPay` vs `workerLabor`). Add a small `useBillsTotals(from,to,type)` and `useDebtTotals(scope)` hook.
-
----
-
-## 6. Bills page (`AdminBills.tsx`)
-
-- Add `bill_type` selector on create/edit (Business / Personal).
-- Filter chips: All / Business / Personal / Paid / Unpaid / Past due.
-- Past-due unpaid still counted in "remaining" until `paid=true`. Paid-this-month uses `paid_on` in current month (already correct from prior pass — verify).
-
----
-
-## 7. Debt page (`AdminDebt.tsx`)
-
-- Add `debt_scope` selector on create/edit.
-- Two sections: Business Debt, Personal Debt with separate totals.
-- Debt payments editable/deletable (existing).
-
----
-
-## 8. Reports (`AdminReports.tsx`)
-
-Two report blocks:
-
-- **Business Report**: gross, materials, worker labor, owner pay, other exp, net profit, business bills, business debt, business allocation breakdown.
-- **Personal Report**: owner pay earned, owner draw, personal bills, personal debt, personal allocations, personal remaining cash.
-
-Footer note: "Business profit and owner personal pay are separate. Owner pay is personal income. Business profit remains in the company."
-
----
-
-## 9. Dashboard (`AdminDashboard.tsx`)
-
-Group existing cards into two visually distinct rows: **Business** (gross, open balances, materials, worker labor, owner pay, business net profit, business bills remaining, business tax reserve) and **Personal** (owner pay week/month, personal bills remaining, personal debt remaining, personal debt paid this month, personal allocation split).
-
----
-
-## 10. Estimate Builder (`AdminEstimates.tsx` + `EstimateShare.tsx`)
-
-Already has discount-aware line items from prior pass. Polish:
-
-- Verify line item shape: `{ title, description, qty, unit_price, discount, final_unit_price, materials_included, customer_supplied_note }`.
-- Ensure `EstimateShare.tsx` renders with **clean** "SCOPE OF WORK — ELECTRICAL" layout, real bullets, no literal `\n`.
-- Show: Original Total / Customer Discount / Final Agreed Total / Deposit Required / Balance Due / Materials note / Terms / Business contact footer (`614-671-8528`).
-
----
-
-## 11. Worker portal
-
-Already exists (`/worker/login`, `/worker/dashboard`). Verify it shows only assigned jobs/tasks/hours/photos and never exposes money/bills/debt/reports/settings. Add an "Invite worker" button on `AdminWorkers.tsx` calling `supabase.functions.invoke('worker-invite', { body: { worker_id }})` if not already wired.
-
----
-
-## 12. Out of scope (explicit)
-
-No van inventory. No messaging system. No table renames. No rebuild of working features.
-
----
-
-## Technical details
-
-**Files to edit**
-- `src/pages/admin/AdminLayout.tsx` (add 2 nav entries)
-- `src/App.tsx` (2 new routes)
-- `src/pages/admin/AdminSettings.tsx` (settings cards + dual allocation editors)
-- `src/pages/admin/AdminBills.tsx` (bill_type field + filters)
-- `src/pages/admin/AdminDebt.tsx` (debt_scope field + sections)
-- `src/pages/admin/AdminMoney.tsx` (split sections)
-- `src/pages/admin/AdminReports.tsx` (split report)
-- `src/pages/admin/AdminDashboard.tsx` (group cards)
-- `src/pages/admin/AdminJobDetails.tsx` (owner hours card + breakdown)
-- `src/pages/EstimateShare.tsx` (clean format pass)
-- `src/lib/useAllocations.ts` (filter by scope)
-- `src/lib/useGlobalSettings.ts` (new keys)
-
-**Files to create**
-- `src/pages/admin/AdminBusiness.tsx`
-- `src/pages/admin/AdminPersonal.tsx`
-- `src/lib/useBillsTotals.ts`, `src/lib/useDebtTotals.ts`
-- One migration file (columns + backfill + seed presets)
-
-**Calculation rules**
-```
-business_job_profit = collected − materials_me − worker_labor − (burden if enabled) − owner_pay − other_exp
-business_cash_after_bills = business_job_profit − business_bills_paid
-personal_remaining = owner_pay_earned + owner_draw − personal_bills_paid − personal_debt_paid
-business_allocations apply to business_job_profit only
-personal_allocations apply to owner_pay + owner_draw only
-```
-
-**QA tests run after build**: the 5 examples in the request (job math, no-workers=$0, personal debt doesn't touch business profit, paid_on filtering, estimate format).
+## Out of scope
+- No new owner-draw tracking table (handled via `personal_expenses.is_income`)
+- No backend formula changes to `useMonthMoney` (already correct after prior passes); only labels & layout change.
+- No estimate/jobs/contacts/bills/debt schema changes.
