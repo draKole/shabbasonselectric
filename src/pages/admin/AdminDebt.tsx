@@ -21,16 +21,18 @@ type Debt = {
   interest_rate: number | null;
   priority: string;
   debt_type: string;
+  debt_scope: string;
   notes: string | null;
   paid_off: boolean;
 };
 type Payment = { id: string; debt_id: string; amount: number; paid_on: string; method: string; notes: string | null };
 
 const TYPES = ["credit card", "personal loan", "family debt", "business debt", "emergency debt", "vehicle", "other"];
+const SCOPES = ["personal", "business"];
 const PRIORITIES = ["critical", "high", "normal", "low"];
 const METHODS = ["cash", "card", "check", "zelle", "venmo", "cashapp", "transfer", "other"];
 
-const empty: Partial<Debt> = { name: "", starting_balance: 0, minimum_payment: 0, priority: "normal", debt_type: "other" };
+const empty: Partial<Debt> = { name: "", starting_balance: 0, minimum_payment: 0, priority: "normal", debt_type: "other", debt_scope: "personal" };
 
 function fmt(n: number) {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
@@ -67,6 +69,7 @@ export default function AdminDebt() {
       interest_rate: editing.interest_rate ? Number(editing.interest_rate) : null,
       priority: editing.priority,
       debt_type: editing.debt_type,
+      debt_scope: editing.debt_scope || "personal",
       notes: editing.notes || null,
     };
     Object.keys(payload).forEach((k) => payload[k] === undefined && delete payload[k]);
