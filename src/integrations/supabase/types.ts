@@ -880,6 +880,48 @@ export type Database = {
           },
         ]
       }
+      personal_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          expense_date: string
+          id: string
+          is_income: boolean
+          method: string
+          notes: string | null
+          recurring: boolean
+          related_bill_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          expense_date?: string
+          id?: string
+          is_income?: boolean
+          method?: string
+          notes?: string | null
+          recurring?: boolean
+          related_bill_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          expense_date?: string
+          id?: string
+          is_income?: boolean
+          method?: string
+          notes?: string | null
+          recurring?: boolean
+          related_bill_id?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       portfolio_projects: {
         Row: {
           after_photos: Json | null
