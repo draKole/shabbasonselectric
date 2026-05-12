@@ -69,6 +69,11 @@ export const SETTINGS_DEFAULTS: GlobalSettings = {
   estimate_show_discount: "yes",
   estimate_show_final: "yes",
   estimate_show_materials_note: "yes",
+  default_billing_rate: "125",
+  default_helper_rate: "20",
+  default_experienced_helper_rate: "27",
+  business_tax_reserve_pct: "25",
+  personal_tax_reserve_pct: "15",
 };
 
 export function useGlobalSettings() {
