@@ -119,18 +119,25 @@ export default function AdminBills() {
                 <div><Label>Due Date</Label><Input type="date" value={editing.due_date || ""} onChange={(e) => setEditing({ ...editing, due_date: e.target.value })} /></div>
               </div>
               <div className="grid grid-cols-2 gap-2">
+                <div><Label>Bill Type</Label>
+                  <Select value={editing.bill_type || "business"} onValueChange={(v) => setEditing({ ...editing, bill_type: v })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{BILL_TYPES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
                 <div><Label>Category</Label>
                   <Select value={editing.category} onValueChange={(v) => setEditing({ ...editing, category: v })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Priority</Label>
-                  <Select value={editing.priority} onValueChange={(v) => setEditing({ ...editing, priority: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>{PRIORITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
+              </div>
+              <div>
+                <Label>Priority</Label>
+                <Select value={editing.priority} onValueChange={(v) => setEditing({ ...editing, priority: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>{PRIORITIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
               <div className="flex items-center gap-2"><Switch checked={!!editing.recurring} onCheckedChange={(v) => setEditing({ ...editing, recurring: v })} /><Label>Recurring</Label></div>
               {editing.recurring && (
@@ -167,15 +174,30 @@ export default function AdminBills() {
       )}
 
       <Card className="p-4">
-        <h2 className="font-bold mb-2">All Bills</h2>
+        <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+          <h2 className="font-bold">All Bills</h2>
+          <div className="flex gap-1 flex-wrap">
+            {(["all","business","personal","unpaid","paid","past_due"] as const).map((f) => (
+              <Button key={f} size="sm" variant={filter === f ? "default" : "outline"} onClick={() => setFilter(f)}>{f.replace("_"," ")}</Button>
+            ))}
+          </div>
+        </div>
         <div className="space-y-2">
-          {bills.map((b) => {
+          {bills.filter((b) => {
+            if (filter === "all") return true;
+            if (filter === "business" || filter === "personal") return b.bill_type === filter;
+            if (filter === "paid") return b.paid;
+            if (filter === "unpaid") return !b.paid;
+            if (filter === "past_due") return !b.paid && b.due_date && new Date(b.due_date) < now;
+            return true;
+          }).map((b) => {
             const overdue = !b.paid && b.due_date && new Date(b.due_date) < now;
             return (
               <div key={b.id} className={`flex flex-wrap items-center justify-between gap-2 p-3 rounded-md border ${b.paid ? "border-success/30 bg-success/5" : overdue ? "border-destructive/40 bg-destructive/5" : "border-border"}`}>
                 <div className="min-w-0">
                   <div className="font-semibold flex items-center gap-2">
                     {b.name}
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${b.bill_type === "personal" ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>{b.bill_type}</span>
                     <span className="text-xs px-1.5 py-0.5 rounded bg-muted">{b.category}</span>
                     {b.priority === "critical" && <span className="text-xs px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground">critical</span>}
                     {b.recurring && <span className="text-xs px-1.5 py-0.5 rounded bg-secondary/20 text-secondary">{b.recurring_frequency}</span>}
