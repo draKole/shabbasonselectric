@@ -21,7 +21,15 @@ export default function AdminDashboard() {
   const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
   const mr = useMemo(() => monthRange(monthKey), [monthKey]);
   const money = useMonthMoney(mr.from, mr.to);
-  const { active: activePreset } = useAllocationPresets();
+  const bizBills = useBillsTotals(mr.from, mr.to, "business");
+  const personalBills = useBillsTotals(mr.from, mr.to, "personal");
+  const personalDebt = useDebtTotals("personal", mr.from, mr.to);
+  const exp = usePersonalExpenses(mr.from, mr.to);
+  const totalLabor = money.workerLabor + money.ownerPay + (money.includeBurden ? money.workerBurden : 0);
+  const ownerDraw = exp.ownerDraw;
+  const personalIncome = money.ownerPay + ownerDraw + exp.otherIncome;
+  const personalCash = personalIncome - personalBills.paid - personalDebt.paidThisMonth - exp.totalExpenses;
+  const businessCashAfterBills = money.netProfit - bizBills.paid - ownerDraw;
 
 
   useEffect(() => {
