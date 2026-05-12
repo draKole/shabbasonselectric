@@ -139,7 +139,26 @@ export default function AdminWorkers() {
     return { earned, paid, balance: earned - paid };
   }
 
-  const visibleWorkers = workers.filter((wk) => showInactive || wk.active);
+  const visibleWorkers = workers
+    .filter((wk) => showInactive || wk.active)
+    .filter((wk) => {
+      if (roleFilter === "all") return true;
+      if (roleFilter === "owner") return wk.is_owner;
+      return (wk.role || "").toLowerCase() === roleFilter || (wk.worker_type || "").toLowerCase() === roleFilter;
+    })
+    .filter((wk) => {
+      if (!search.trim()) return true;
+      const s = search.toLowerCase();
+      return (wk.full_name || "").toLowerCase().includes(s) || (wk.phone || "").includes(s) || (wk.email || "").toLowerCase().includes(s);
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "hours_week": return hoursThisWeek(b.id) - hoursThisWeek(a.id);
+        case "balance": return balanceFor(b.id).balance - balanceFor(a.id).balance;
+        case "role": return (a.role || "").localeCompare(b.role || "");
+        default: return (a.full_name || "").localeCompare(b.full_name || "");
+      }
+    });
 
   return (
     <div className="container-tight py-6 space-y-4">
@@ -150,6 +169,38 @@ export default function AdminWorkers() {
           <Button onClick={openNew} size="sm" className="gap-1"><Plus className="h-4 w-4" />Add Worker</Button>
         </div>
       </div>
+
+      <Card className="p-3 flex flex-wrap gap-2 items-end">
+        <div className="flex-1 min-w-[160px]">
+          <Label className="text-xs">Search</Label>
+          <Input placeholder="Name, phone, email…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="w-40">
+          <Label className="text-xs">Role / type</Label>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {["all", "owner", "helper", "apprentice", "journeyman", "subcontractor", "electrician", "other"].map((r) => (
+                <SelectItem key={r} value={r}>{r}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-44">
+          <Label className="text-xs">Sort by</Label>
+          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="hours_week">Hours this week</SelectItem>
+              <SelectItem value="balance">Balance owed</SelectItem>
+              <SelectItem value="role">Role</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="text-xs text-muted-foreground ml-auto">{visibleWorkers.length} of {workers.length}</div>
+      </Card>
+
 
       <Dialog open={adding} onOpenChange={(o) => { setAdding(o); if (!o) { setEditing(null); setW(empty); } }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
