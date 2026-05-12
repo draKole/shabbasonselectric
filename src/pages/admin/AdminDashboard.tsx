@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check, TrendingUp, Receipt, Users, ListChecks } from "lucide-react";
 import { useAppSetting } from "@/lib/useAppSettings";
 import { useMonthMoney, monthRange } from "@/lib/useMonthMoney";
-import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
+import { useBillsTotals, useDebtTotals } from "@/lib/useBillsTotals";
+import { usePersonalExpenses } from "@/lib/usePersonalExpenses";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
