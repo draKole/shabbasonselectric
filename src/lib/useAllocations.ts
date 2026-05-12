@@ -2,18 +2,20 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Bucket = { name: string; percent: number; color?: string; enabled?: boolean };
-export type Preset = { id: string; name: string; buckets: Bucket[]; is_active: boolean };
+export type Preset = { id: string; name: string; buckets: Bucket[]; is_active: boolean; scope?: string };
 
-export function useAllocationPresets() {
+export function useAllocationPresets(scope?: "business" | "personal") {
   const [presets, setPresets] = useState<Preset[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
-    const { data } = await supabase.from("allocation_presets").select("*").order("created_at");
+    let q = supabase.from("allocation_presets").select("*").order("created_at");
+    if (scope) q = q.eq("scope", scope);
+    const { data } = await q;
     setPresets((data as any) || []);
     setLoading(false);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [scope]);
 
   return { presets, loading, reload: load, active: presets.find((p) => p.is_active) || presets[0] };
 }
