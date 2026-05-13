@@ -192,7 +192,34 @@ export default function WorkerDashboard() {
             {entries.length === 0 && <p className="text-xs text-muted-foreground">No hours yet.</p>}
           </div>
         </Card>
+
+        <Card className="p-4">
+          <h2 className="font-bold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> My paystubs</h2>
+          <div className="space-y-1 text-sm">
+            {paystubs.map((p) => (
+              <button key={p.id} onClick={() => setViewingStub(p)} className="w-full flex items-center justify-between border-b border-border py-2 text-left hover:bg-muted/30">
+                <div>
+                  <div className="font-semibold">{p.period_start} → {p.period_end}</div>
+                  <div className="text-xs text-muted-foreground">Pay date {p.pay_date} · {Number(p.hours).toFixed(2)}h · gross ${Number(p.gross).toFixed(0)} · net ${Number(p.net_pay).toFixed(0)}</div>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded ${p.status === "paid" ? "bg-success/15 text-success" : "bg-muted"}`}>{p.status}</span>
+              </button>
+            ))}
+            {paystubs.length === 0 && <p className="text-xs text-muted-foreground">No paystubs yet.</p>}
+          </div>
+        </Card>
+
+        <Card className="p-4 space-y-3">
+          <h2 className="font-bold">My profile</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="col-span-2"><Label>Name</Label><Input value={profile.full_name} onChange={(e) => setProfile({ ...profile, full_name: e.target.value })} /></div>
+            <div><Label>Phone</Label><Input value={profile.phone} onChange={(e) => setProfile({ ...profile, phone: e.target.value })} /></div>
+            <div><Label>Email</Label><Input value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })} /></div>
+          </div>
+          <Button onClick={saveProfile} variant="outline">Save profile</Button>
+        </Card>
       </div>
+      {viewingStub && <PaystubModal p={viewingStub} settings={settings} workerName={worker.full_name} onClose={() => setViewingStub(null)} />}
     </div>
   );
 }
