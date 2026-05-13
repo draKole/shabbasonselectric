@@ -37,6 +37,19 @@ export type GlobalSettings = {
   default_experienced_helper_rate: string;
   business_tax_reserve_pct: string;
   personal_tax_reserve_pct: string;
+  // Payroll & tax planning
+  fed_withholding_pct: string;
+  oh_withholding_pct: string;
+  local_withholding_pct: string;
+  fica_employee_pct: string;
+  fica_employer_pct: string;
+  retirement_pct: string;
+  retirement_enabled: string; // yes|no
+  retirement_note: string;
+  pay_period_default: string; // weekly|biweekly|monthly
+  paystub_company_name: string;
+  paystub_company_phone: string;
+  paystub_company_address: string;
 };
 
 export const SETTINGS_DEFAULTS: GlobalSettings = {
