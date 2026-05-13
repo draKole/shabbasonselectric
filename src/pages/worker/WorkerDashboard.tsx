@@ -31,20 +31,30 @@ export default function WorkerDashboard() {
   async function load() {
     const { data: sess } = await supabase.auth.getSession();
     if (!sess.session) { nav("/worker/login"); return; }
-    const { data: ws } = await supabase.from("workers").select("id, full_name, hourly_rate, is_owner, active")
+    const { data: ws } = await supabase.from("workers").select("id, full_name, hourly_rate, is_owner, active, phone, email")
       .eq("auth_user_id", sess.session.user.id).maybeSingle();
     if (!ws) { toast.error("No worker profile linked. Ask admin."); await supabase.auth.signOut(); nav("/worker/login"); return; }
     if (!ws.active) { toast.error("Your access was deactivated."); await supabase.auth.signOut(); nav("/worker/login"); return; }
     setWorker(ws as any);
-    const [{ data: js }, { data: ts }, { data: es }] = await Promise.all([
+    setProfile({ full_name: ws.full_name || "", phone: (ws as any).phone || "", email: (ws as any).email || "" });
+    const [{ data: js }, { data: ts }, { data: es }, { data: ps }] = await Promise.all([
       supabase.from("jobs").select("id, address, city, description, scheduled_start, status").eq("archived", false).order("scheduled_start", { ascending: true, nullsFirst: false }),
       supabase.from("job_tasks").select("id, title, status, job_id").eq("worker_id", ws.id).order("display_order"),
       supabase.from("worker_time_entries").select("id, job_id, work_date, hours, amount, approved, paid, notes")
         .eq("worker_id", ws.id).order("work_date", { ascending: false }).limit(50),
+      (supabase as any).from("paystubs").select("*").eq("worker_id", ws.id).order("pay_date", { ascending: false }).limit(20),
     ]);
     setJobs((js as any) || []);
     setTasks((ts as any) || []);
     setEntries((es as any) || []);
+    setPaystubs((ps as any) || []);
+  }
+
+  async function saveProfile() {
+    if (!worker) return;
+    const { error } = await supabase.from("workers").update({ full_name: profile.full_name, phone: profile.phone, email: profile.email } as any).eq("id", worker.id);
+    if (error) return toast.error(error.message);
+    toast.success("Profile saved"); load();
   }
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
