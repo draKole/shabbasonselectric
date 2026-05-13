@@ -7,7 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Clock, CheckCircle2, Camera, LogOut } from "lucide-react";
+import { Clock, CheckCircle2, Camera, LogOut, FileText } from "lucide-react";
+import { PaystubModal } from "@/pages/admin/AdminPaystubs";
+import { useGlobalSettings } from "@/lib/useGlobalSettings";
 
 type Worker = { id: string; full_name: string; hourly_rate: number; is_owner: boolean; active: boolean };
 type Job = { id: string; address: string | null; city: string | null; description: string | null; scheduled_start: string | null; status: string };
