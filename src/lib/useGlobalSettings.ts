@@ -37,6 +37,19 @@ export type GlobalSettings = {
   default_experienced_helper_rate: string;
   business_tax_reserve_pct: string;
   personal_tax_reserve_pct: string;
+  // Payroll & tax planning
+  fed_withholding_pct: string;
+  oh_withholding_pct: string;
+  local_withholding_pct: string;
+  fica_employee_pct: string;
+  fica_employer_pct: string;
+  retirement_pct: string;
+  retirement_enabled: string; // yes|no
+  retirement_note: string;
+  pay_period_default: string; // weekly|biweekly|monthly
+  paystub_company_name: string;
+  paystub_company_phone: string;
+  paystub_company_address: string;
 };
 
 export const SETTINGS_DEFAULTS: GlobalSettings = {
@@ -74,6 +87,18 @@ export const SETTINGS_DEFAULTS: GlobalSettings = {
   default_experienced_helper_rate: "27",
   business_tax_reserve_pct: "25",
   personal_tax_reserve_pct: "15",
+  fed_withholding_pct: "10",
+  oh_withholding_pct: "3.5",
+  local_withholding_pct: "2.5",
+  fica_employee_pct: "7.65",
+  fica_employer_pct: "7.65",
+  retirement_pct: "0",
+  retirement_enabled: "no",
+  retirement_note: "",
+  pay_period_default: "weekly",
+  paystub_company_name: "Shabba & Sons Electric",
+  paystub_company_phone: "614-671-8528",
+  paystub_company_address: "",
 };
 
 export function useGlobalSettings() {

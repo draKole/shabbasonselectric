@@ -174,6 +174,48 @@ export default function AdminSettings() {
         <Button onClick={saveAll} disabled={busy} variant="outline">Save Estimate Settings</Button>
       </Card>
 
+      <Card className="p-5 space-y-4">
+        <div>
+          <h2 className="font-bold">Payroll & Tax Planning</h2>
+          <p className="text-xs text-muted-foreground">Used to estimate paystubs and tax reserves. <b>Planning only</b> — not official payroll filing.</p>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3">
+          <div><Label>Business billing rate ($/hr)</Label><Input type="number" value={form.default_billing_rate} onChange={(e) => set("default_billing_rate", e.target.value)} /></div>
+          <div><Label>Owner-worker rate ($/hr)</Label><Input type="number" value={form.owner_default_hourly} onChange={(e) => set("owner_default_hourly", e.target.value)} /></div>
+          <div><Label>Helper rate ($/hr)</Label><Input type="number" value={form.default_helper_rate} onChange={(e) => set("default_helper_rate", e.target.value)} /></div>
+          <div><Label>Experienced helper ($/hr)</Label><Input type="number" value={form.default_experienced_helper_rate} onChange={(e) => set("default_experienced_helper_rate", e.target.value)} /></div>
+          <div><Label>Federal WH %</Label><Input type="number" step="0.1" value={form.fed_withholding_pct} onChange={(e) => set("fed_withholding_pct", e.target.value)} /></div>
+          <div><Label>Ohio WH %</Label><Input type="number" step="0.1" value={form.oh_withholding_pct} onChange={(e) => set("oh_withholding_pct", e.target.value)} /></div>
+          <div><Label>Columbus/local WH %</Label><Input type="number" step="0.1" value={form.local_withholding_pct} onChange={(e) => set("local_withholding_pct", e.target.value)} /></div>
+          <div><Label>Employee FICA %</Label><Input type="number" step="0.01" value={form.fica_employee_pct} onChange={(e) => set("fica_employee_pct", e.target.value)} /></div>
+          <div><Label>Employer FICA %</Label><Input type="number" step="0.01" value={form.fica_employer_pct} onChange={(e) => set("fica_employer_pct", e.target.value)} /></div>
+          <div><Label>Business tax reserve %</Label><Input type="number" step="0.1" value={form.business_tax_reserve_pct} onChange={(e) => set("business_tax_reserve_pct", e.target.value)} /></div>
+          <div><Label>Personal tax reserve %</Label><Input type="number" step="0.1" value={form.personal_tax_reserve_pct} onChange={(e) => set("personal_tax_reserve_pct", e.target.value)} /></div>
+          <div><Label>Pay period default</Label>
+            <select className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm" value={form.pay_period_default} onChange={(e) => set("pay_period_default", e.target.value)}>
+              <option value="weekly">Weekly</option><option value="biweekly">Bi-weekly</option><option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3 pt-2 border-t">
+          <label className="flex items-center justify-between rounded-md border border-border p-3">
+            <div>
+              <div className="font-semibold text-sm">Retirement enabled?</div>
+              <div className="text-xs text-muted-foreground">Planning only unless a real retirement plan is set up.</div>
+            </div>
+            <Switch checked={isYes(form.retirement_enabled)} onCheckedChange={(c) => set("retirement_enabled", c ? "yes" : "no")} />
+          </label>
+          <div><Label>Retirement %</Label><Input type="number" step="0.1" value={form.retirement_pct} onChange={(e) => set("retirement_pct", e.target.value)} /></div>
+          <div className="sm:col-span-2"><Label>Retirement note</Label><Input value={form.retirement_note} onChange={(e) => set("retirement_note", e.target.value)} placeholder="e.g. Solo 401k planning" /></div>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-3 pt-2 border-t">
+          <div><Label>Paystub company name</Label><Input value={form.paystub_company_name} onChange={(e) => set("paystub_company_name", e.target.value)} /></div>
+          <div><Label>Paystub phone</Label><Input value={form.paystub_company_phone} onChange={(e) => set("paystub_company_phone", e.target.value)} /></div>
+          <div><Label>Paystub address</Label><Input value={form.paystub_company_address} onChange={(e) => set("paystub_company_address", e.target.value)} /></div>
+        </div>
+        <Button onClick={saveAll} disabled={busy} variant="outline">Save Payroll & Tax Settings</Button>
+      </Card>
+
       <Card className="p-5 space-y-2">
         <h2 className="font-bold">Recalculate All Totals</h2>
         <p className="text-xs text-muted-foreground">If money numbers ever look stale, this safely recomputes job totals (paid/balance/labor) and debt balances from the actual transactions. Does not delete any data.</p>

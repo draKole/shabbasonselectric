@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Trash2, UserPlus, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { seedWorkerDocs } from "@/lib/useWorkerDocuments";
 
 const STATUSES = ["new", "contacted", "interview", "approved", "converted", "not_a_fit"];
 const STATUS_LABEL: Record<string, string> = {
@@ -65,8 +66,9 @@ export default function AdminApplications() {
       notes: [a.notes, a.skills?.length ? `Skills: ${a.skills.join(", ")}` : "", a.years_experience ? `${a.years_experience} yrs exp` : ""].filter(Boolean).join(" · "),
     } as any).select("id").single();
     if (error) return toast.error(error.message);
+    await seedWorkerDocs(created!.id);
     await supabase.from("job_applications").update({ status: "converted", converted_worker_id: created!.id }).eq("id", a.id);
-    toast.success("Worker created from application");
+    toast.success("Worker created with onboarding checklist");
     load();
   }
 

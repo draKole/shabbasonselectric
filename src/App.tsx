@@ -43,6 +43,8 @@ import WorkerLogin from "./pages/worker/WorkerLogin";
 import WorkerDashboard from "./pages/worker/WorkerDashboard";
 import AdminBusiness from "./pages/admin/AdminBusiness";
 import AdminPersonal from "./pages/admin/AdminPersonal";
+import AdminPaystubs from "./pages/admin/AdminPaystubs";
+import AdminHistoricalIncome from "./pages/admin/AdminHistoricalIncome";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +93,8 @@ const App = () => (
               <Route path="workers" element={<AdminWorkers />} />
               <Route path="templates" element={<AdminTemplates />} />
               <Route path="reports" element={<AdminReports />} />
+              <Route path="paystubs" element={<AdminPaystubs />} />
+              <Route path="historical-income" element={<AdminHistoricalIncome />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="setup" element={<AdminSetup />} />
             </Route>
