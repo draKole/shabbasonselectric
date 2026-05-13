@@ -20,6 +20,8 @@ const NAV = [
   { to: "/admin/bills", label: "Bills", icon: Receipt },
   { to: "/admin/debt", label: "Debt", icon: CreditCard },
   { to: "/admin/workers", label: "Workers", icon: HardHat },
+  { to: "/admin/paystubs", label: "Paystubs", icon: FileSpreadsheet },
+  { to: "/admin/historical-income", label: "Import Income", icon: Archive },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },
   { to: "/admin/applications", label: "Applications", icon: Users },
