@@ -18,10 +18,14 @@ type Entry = { id: string; job_id: string | null; work_date: string; hours: numb
 
 export default function WorkerDashboard() {
   const nav = useNavigate();
+  const { settings } = useGlobalSettings();
   const [worker, setWorker] = useState<Worker | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [paystubs, setPaystubs] = useState<any[]>([]);
+  const [viewingStub, setViewingStub] = useState<any>(null);
+  const [profile, setProfile] = useState({ full_name: "", phone: "", email: "" });
   const [hours, setHours] = useState({ job_id: "", work_date: new Date().toISOString().slice(0, 10), hours: "", notes: "" });
 
   async function load() {
