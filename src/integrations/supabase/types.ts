@@ -413,6 +413,54 @@ export type Database = {
           },
         ]
       }
+      historical_income: {
+        Row: {
+          already_spent: boolean
+          amount: number
+          count_in_cash: boolean
+          count_in_ytd: boolean
+          created_at: string
+          customer_name: string | null
+          description: string | null
+          entry_date: string
+          id: string
+          notes: string | null
+          scope: string
+          source: string
+          updated_at: string
+        }
+        Insert: {
+          already_spent?: boolean
+          amount?: number
+          count_in_cash?: boolean
+          count_in_ytd?: boolean
+          created_at?: string
+          customer_name?: string | null
+          description?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          scope?: string
+          source?: string
+          updated_at?: string
+        }
+        Update: {
+          already_spent?: boolean
+          amount?: number
+          count_in_cash?: boolean
+          count_in_ytd?: boolean
+          created_at?: string
+          customer_name?: string | null
+          description?: string | null
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          scope?: string
+          source?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       job_applications: {
         Row: {
           admin_notes: string | null
@@ -880,6 +928,90 @@ export type Database = {
           },
         ]
       }
+      paystubs: {
+        Row: {
+          created_at: string
+          deductions_total: number
+          employer_total_cost: number
+          fed_wh: number
+          fica_ee: number
+          fica_er: number
+          gross: number
+          hourly_rate: number
+          hours: number
+          id: string
+          ins_amt: number
+          local_wh: number
+          net_pay: number
+          notes: string | null
+          pay_date: string
+          pdf_url: string | null
+          period_end: string
+          period_start: string
+          ppe_amt: number
+          retirement: number
+          state_wh: number
+          status: string
+          updated_at: string
+          wc_amt: number
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          deductions_total?: number
+          employer_total_cost?: number
+          fed_wh?: number
+          fica_ee?: number
+          fica_er?: number
+          gross?: number
+          hourly_rate?: number
+          hours?: number
+          id?: string
+          ins_amt?: number
+          local_wh?: number
+          net_pay?: number
+          notes?: string | null
+          pay_date?: string
+          pdf_url?: string | null
+          period_end: string
+          period_start: string
+          ppe_amt?: number
+          retirement?: number
+          state_wh?: number
+          status?: string
+          updated_at?: string
+          wc_amt?: number
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          deductions_total?: number
+          employer_total_cost?: number
+          fed_wh?: number
+          fica_ee?: number
+          fica_er?: number
+          gross?: number
+          hourly_rate?: number
+          hours?: number
+          id?: string
+          ins_amt?: number
+          local_wh?: number
+          net_pay?: number
+          notes?: string | null
+          pay_date?: string
+          pdf_url?: string | null
+          period_end?: string
+          period_start?: string
+          ppe_amt?: number
+          retirement?: number
+          state_wh?: number
+          status?: string
+          updated_at?: string
+          wc_amt?: number
+          worker_id?: string
+        }
+        Relationships: []
+      }
       personal_expenses: {
         Row: {
           amount: number
@@ -1137,6 +1269,39 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_documents: {
+        Row: {
+          created_at: string
+          doc_key: string
+          id: string
+          notes: string | null
+          received: boolean
+          received_on: string | null
+          updated_at: string
+          worker_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_key: string
+          id?: string
+          notes?: string | null
+          received?: boolean
+          received_on?: string | null
+          updated_at?: string
+          worker_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_key?: string
+          id?: string
+          notes?: string | null
+          received?: boolean
+          received_on?: string | null
+          updated_at?: string
+          worker_id?: string
+        }
+        Relationships: []
+      }
       worker_payments: {
         Row: {
           amount: number
@@ -1171,7 +1336,10 @@ export type Database = {
         Row: {
           amount: number
           approved: boolean
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
+          end_time: string | null
           hourly_rate: number
           hours: number
           id: string
@@ -1179,13 +1347,20 @@ export type Database = {
           notes: string | null
           paid: boolean
           paid_at: string | null
+          paystub_id: string | null
+          rejected_reason: string | null
+          start_time: string | null
+          status: string
           work_date: string
           worker_id: string
         }
         Insert: {
           amount?: number
           approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
+          end_time?: string | null
           hourly_rate?: number
           hours?: number
           id?: string
@@ -1193,13 +1368,20 @@ export type Database = {
           notes?: string | null
           paid?: boolean
           paid_at?: string | null
+          paystub_id?: string | null
+          rejected_reason?: string | null
+          start_time?: string | null
+          status?: string
           work_date?: string
           worker_id: string
         }
         Update: {
           amount?: number
           approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
+          end_time?: string | null
           hourly_rate?: number
           hours?: number
           id?: string
@@ -1207,6 +1389,10 @@ export type Database = {
           notes?: string | null
           paid?: boolean
           paid_at?: string | null
+          paystub_id?: string | null
+          rejected_reason?: string | null
+          start_time?: string | null
+          status?: string
           work_date?: string
           worker_id?: string
         }
