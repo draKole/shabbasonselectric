@@ -27,10 +27,12 @@ export default function AdminPaystubs() {
   async function load() {
     const [{ data: ws }, { data: ps }] = await Promise.all([
       supabase.from("workers").select("id, full_name, hourly_rate, workers_comp_pct, insurance_pct, ppe_monthly, is_owner").eq("active", true).order("full_name"),
-      (supabase as any).from("paystubs").select("*, workers(full_name)").order("pay_date", { ascending: false }).limit(100),
+      (supabase as any).from("paystubs").select("*").order("pay_date", { ascending: false }).limit(100),
     ]);
     setWorkers((ws as any) || []);
-    setPaystubs((ps as any) || []);
+    // attach worker name from ws
+    const map = new Map<string, string>(((ws as any) || []).map((w: any) => [w.id, w.full_name]));
+    setPaystubs(((ps as any) || []).map((p: any) => ({ ...p, workers: { full_name: map.get(p.worker_id) || "" } })));
   }
   useEffect(() => { load(); }, []);
 
