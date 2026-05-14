@@ -223,7 +223,7 @@ export default function AdminPaystubs() {
         );
       })()}
 
-      {viewing && <PaystubModal p={viewing} settings={settings} workerName={viewing.workers?.full_name || "Worker"} onClose={() => setViewing(null)} />}
+      {viewing && <PaystubModal p={viewing} settings={settings} workerName={viewing.workers?.full_name || "Worker"} workerRole={viewing.workers?.role || ""} onClose={() => setViewing(null)} />}
     </div>
   );
 }
