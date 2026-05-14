@@ -54,4 +54,4 @@ export function computePaystub(input: PaystubInput, s: GlobalSettings): PaystubB
 }
 
 export const PAYSTUB_DISCLAIMER =
-  "For internal tracking and planning unless processed through a payroll provider. Withholding amounts are estimates, not official tax filings.";
+  "Planning estimate only. Not official payroll filing unless processed through a payroll/accounting provider.";
