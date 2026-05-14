@@ -116,11 +116,45 @@ export default function WorkerDashboard() {
           </Button>
         </div>
 
-        <Card className="p-4 bg-success/5 border-success/40">
-          <div className="text-xs text-muted-foreground">This week</div>
-          <div className="text-2xl font-extrabold text-success">{wk.hrs.toFixed(2)} hrs · ${wk.amt.toFixed(0)} est.</div>
-          <div className="text-xs text-muted-foreground mt-1">{wk.count} entries (pending counts toward estimate)</div>
-        </Card>
+        {(() => {
+          const year = new Date().getFullYear();
+          const ytdStart = `${year}-01-01`;
+          const ytdStubs = paystubs.filter((p) => p.pay_date >= ytdStart);
+          const ytdGross = ytdStubs.reduce((s, p) => s + Number(p.gross || 0), 0);
+          const ytdNet = ytdStubs.reduce((s, p) => s + Number(p.net_pay || 0), 0);
+          const ytdDed = ytdStubs.reduce((s, p) => s + Number(p.deductions_total || 0), 0);
+          const approvedUnpaid = entries.filter((e) => e.approved && !e.paid);
+          const auHrs = approvedUnpaid.reduce((s, e) => s + Number(e.hours || 0), 0);
+          const auAmt = approvedUnpaid.reduce((s, e) => s + Number(e.amount || 0), 0);
+          const latest = paystubs[0];
+          return (
+            <div className="grid sm:grid-cols-2 gap-3">
+              <Card className="p-4 bg-success/5 border-success/40">
+                <div className="text-xs text-muted-foreground">This week</div>
+                <div className="text-2xl font-extrabold text-success">{wk.hrs.toFixed(2)} hrs · ${wk.amt.toFixed(0)} est.</div>
+                <div className="text-xs text-muted-foreground mt-1">{wk.count} entries (pending counts toward estimate)</div>
+              </Card>
+              <Card className="p-4">
+                <div className="text-xs text-muted-foreground">Approved unpaid hours</div>
+                <div className="text-2xl font-extrabold">{auHrs.toFixed(2)} hrs</div>
+                <div className="text-xs text-muted-foreground mt-1">≈ ${auAmt.toFixed(0)} — included on next paystub</div>
+              </Card>
+              <Card className="p-4 sm:col-span-2">
+                <div className="text-xs text-muted-foreground mb-1">YTD {year} (from paystubs)</div>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <div><div className="text-xs text-muted-foreground">Gross</div><div className="font-bold text-base">${ytdGross.toFixed(0)}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Deductions</div><div className="font-bold text-base">${ytdDed.toFixed(0)}</div></div>
+                  <div><div className="text-xs text-muted-foreground">Net</div><div className="font-bold text-base text-success">${ytdNet.toFixed(0)}</div></div>
+                </div>
+                {latest && (
+                  <button onClick={() => setViewingStub(latest)} className="text-xs underline text-secondary mt-2 block">
+                    View latest paystub: {latest.period_start} → {latest.period_end}
+                  </button>
+                )}
+              </Card>
+            </div>
+          );
+        })()}
 
         <Card className="p-4 space-y-3">
           <h2 className="font-bold flex items-center gap-2"><Clock className="h-4 w-4" /> Log hours</h2>
