@@ -44,6 +44,11 @@ export default function AdminReports() {
   const ybizDebt = useDebtTotals("business", yr.from, yr.to);
   const exp = usePersonalExpenses(mr.from, mr.to);
   const hist = useHistoricalIncome("business", yr.from, yr.to);
+  const histMonth = useHistoricalIncome("business", mr.from, mr.to);
+  const monthHistTotal = histMonth.items.filter(i => i.count_in_ytd).reduce((s, i) => s + Number(i.amount || 0), 0);
+  const monthHistMats = histMonth.ytdEstMaterials;
+  const monthHistSpent = histMonth.items.filter(i => i.already_spent && i.count_in_ytd).reduce((s, i) => s + Number(i.amount || 0), 0);
+  const monthHistCash = histMonth.cashAmount;
 
   // Payroll: paystubs in month + YTD
   const [paystubsMonth, setPaystubsMonth] = useState<any[]>([]);
