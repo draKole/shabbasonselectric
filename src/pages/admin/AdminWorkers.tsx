@@ -21,6 +21,9 @@ export default function AdminWorkers() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"name" | "hours_week" | "balance" | "role">("name");
+  const [docFilter, setDocFilter] = useState<"all" | "missing" | "complete">("all");
+  const [allDocs, setAllDocs] = useState<any[]>([]);
+  const [openChecklist, setOpenChecklist] = useState<string | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
   const [adding, setAdding] = useState(false);
   const empty = { full_name: "", phone: "", email: "", role: "helper", pay_type: "hourly", hourly_rate: "25", tax_pct: "0", workers_comp_pct: "0", insurance_pct: "0", ppe_monthly: "0", notes: "" };
