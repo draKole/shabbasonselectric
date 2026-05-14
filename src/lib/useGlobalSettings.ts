@@ -58,7 +58,7 @@ export const SETTINGS_DEFAULTS: GlobalSettings = {
   default_burden_pct: "0",
   default_workers_comp_pct: "0",
   default_insurance_pct: "0",
-  default_ppe_monthly: "0",
+  default_ppe_monthly: "25",
   burden_in_reports: "no",
   burden_in_profit: "no",
   business_name: "Shabba & Sons Electric",
