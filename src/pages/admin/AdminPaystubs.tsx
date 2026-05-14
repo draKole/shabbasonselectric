@@ -31,7 +31,7 @@ export default function AdminPaystubs() {
 
   async function load() {
     const [{ data: ws }, { data: ps }] = await Promise.all([
-      supabase.from("workers").select("id, full_name, hourly_rate, workers_comp_pct, insurance_pct, ppe_monthly, is_owner").eq("active", true).order("full_name"),
+      supabase.from("workers").select("id, full_name, role, hourly_rate, workers_comp_pct, insurance_pct, ppe_monthly, is_owner").eq("active", true).order("full_name"),
       (supabase as any).from("paystubs").select("*").order("pay_date", { ascending: false }).limit(100),
     ]);
     setWorkers((ws as any) || []);
