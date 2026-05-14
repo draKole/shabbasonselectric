@@ -423,6 +423,8 @@ export type Database = {
           customer_name: string | null
           description: string | null
           entry_date: string
+          est_materials_amount: number | null
+          est_materials_pct: number
           id: string
           notes: string | null
           scope: string
@@ -438,6 +440,8 @@ export type Database = {
           customer_name?: string | null
           description?: string | null
           entry_date?: string
+          est_materials_amount?: number | null
+          est_materials_pct?: number
           id?: string
           notes?: string | null
           scope?: string
@@ -453,6 +457,8 @@ export type Database = {
           customer_name?: string | null
           description?: string | null
           entry_date?: string
+          est_materials_amount?: number | null
+          est_materials_pct?: number
           id?: string
           notes?: string | null
           scope?: string
