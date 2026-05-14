@@ -179,7 +179,7 @@ export default function AdminReports() {
               <Stat label="New tracked job payments" value={fmt(m.collected)} />
               <Stat label="Historical catch-up income" value={fmt(monthHistTotal)} />
               <Stat label="Total income (month)" value={fmt(m.collected + monthHistTotal)} highlight />
-              <Stat label="Cash impact (historical)" value={fmt(monthHistCash)} sub={monthHistSpent > 0 ? `${fmt(monthHistSpent)} already spent` : undefined} />
+              <Stat label={`Cash impact (historical)${monthHistSpent > 0 ? ` · ${fmt(monthHistSpent)} spent` : ""}`} value={fmt(monthHistCash)} />
               <Stat label="Actual tracked materials" value={fmt(m.materialsMe)} />
               <Stat label="Estimated historical materials" value={fmt(monthHistMats)} />
               <Stat label="Total materials (incl. estimates)" value={fmt(m.materialsMe + monthHistMats)} />
