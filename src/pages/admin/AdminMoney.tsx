@@ -151,7 +151,7 @@ export default function AdminMoney() {
             </div>
           )}
         </div>
-        <div className="text-[11px] text-muted-foreground">Edit presets in <Link to="/admin/settings" className="underline">Settings</Link>.</div>
+        <div className="text-[11px] text-muted-foreground">Allocations only use available cash, not historical already-spent income. Edit presets in <Link to="/admin/settings" className="underline">Settings</Link>.</div>
       </Card>
 
       <Card className="p-5">

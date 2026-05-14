@@ -44,6 +44,11 @@ export default function AdminReports() {
   const ybizDebt = useDebtTotals("business", yr.from, yr.to);
   const exp = usePersonalExpenses(mr.from, mr.to);
   const hist = useHistoricalIncome("business", yr.from, yr.to);
+  const histMonth = useHistoricalIncome("business", mr.from, mr.to);
+  const monthHistTotal = histMonth.items.filter(i => i.count_in_ytd).reduce((s, i) => s + Number(i.amount || 0), 0);
+  const monthHistMats = histMonth.ytdEstMaterials;
+  const monthHistSpent = histMonth.items.filter(i => i.already_spent && i.count_in_ytd).reduce((s, i) => s + Number(i.amount || 0), 0);
+  const monthHistCash = histMonth.cashAmount;
 
   // Payroll: paystubs in month + YTD
   const [paystubsMonth, setPaystubsMonth] = useState<any[]>([]);
@@ -102,9 +107,12 @@ export default function AdminReports() {
   const ytdHistoricalSpent = hist.items.filter(i => i.already_spent).reduce((s, i) => s + Number(i.amount || 0), 0);
   const ytdHistoricalCash = hist.cashAmount;
   const ytdTotalIncome = ytdActualPayments + ytdHistorical;
-  const ytdMaterials = ym.materialsMe;
+  const ytdActualMaterials = ym.materialsMe;
+  const ytdEstHistMaterials = hist.ytdEstMaterials;
+  const ytdTotalMaterials = ytdActualMaterials + ytdEstHistMaterials;
   const ytdLabor = ym.workerLabor + ym.ownerPay + (burdenOn ? ym.workerBurden : 0);
   const ytdProfit = ym.netProfit;
+  const ytdEstProfitWithHistorical = ytdProfit + (ytdHistorical - ytdEstHistMaterials);
 
   function exportMonth() {
     const rows: (string | number)[][] = [
@@ -166,20 +174,26 @@ export default function AdminReports() {
         <TabsContent value="business" className="space-y-4">
           <Card className="p-5 space-y-3">
             <h2 className="font-bold">Business Report — {month}</h2>
+            <div className="text-[11px] text-muted-foreground -mt-1">Actual tracked data + historical catch-up shown separately.</div>
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-              <Stat label="Gross collected" value={fmt(m.collected)} />
-              <Stat label="Materials paid by me" value={fmt(m.materialsMe)} />
-              <Stat label="Non-owner worker pay" value={fmt(m.workerLabor)} />
+              <Stat label="New tracked job payments" value={fmt(m.collected)} />
+              <Stat label="Historical catch-up income" value={fmt(monthHistTotal)} />
+              <Stat label="Total income (month)" value={fmt(m.collected + monthHistTotal)} highlight />
+              <Stat label={`Cash impact (historical)${monthHistSpent > 0 ? ` · ${fmt(monthHistSpent)} spent` : ""}`} value={fmt(monthHistCash)} />
+              <Stat label="Actual tracked materials" value={fmt(m.materialsMe)} />
+              <Stat label="Estimated historical materials" value={fmt(monthHistMats)} />
+              <Stat label="Total materials (incl. estimates)" value={fmt(m.materialsMe + monthHistMats)} />
               <Stat label="Owner-Worker Pay" value={fmt(m.ownerPay)} />
-              <Stat label="Other job expenses" value={fmt(m.otherExp)} />
+              <Stat label="Non-owner worker pay" value={fmt(m.workerLabor)} />
               <Stat label="Extra Worker Cost" value={fmt(m.workerBurden)} />
-              <Stat label="Total Cost to Business (labor)" value={fmt(totalLabor)} />
+              <Stat label="Other job expenses" value={fmt(m.otherExp)} />
               <Stat label="Business bills paid" value={fmt(bizBills.paid)} />
               <Stat label="Business debt paid" value={fmt(bizDebt.paidThisMonth)} />
               <Stat label="Tax reserve" value={fmt(bizTaxReserve)} />
-              <Stat label="Business profit" value={fmt(businessProfit)} highlight />
+              <Stat label="Business profit estimate" value={fmt(businessProfit + (monthHistTotal - monthHistMats))} highlight />
               <Stat label="Cash after obligations" value={fmt(bizCash)} highlight />
             </div>
+            <p className="text-[11px] text-muted-foreground">Historical catch-up money is included in profit estimate but does NOT add to current cash if marked already spent.</p>
           </Card>
           <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
@@ -264,13 +278,17 @@ export default function AdminReports() {
               <Stat label="Historical imported income" value={fmt(ytdHistorical)} />
               <Stat label="Already spent (historical)" value={fmt(ytdHistoricalSpent)} />
               <Stat label="Current cash from historical" value={fmt(ytdHistoricalCash)} />
-              <Stat label="Actual job payments YTD" value={fmt(ytdActualPayments)} />
+              <Stat label="New tracked job payments YTD" value={fmt(ytdActualPayments)} />
               <Stat label="Total YTD business income" value={fmt(ytdTotalIncome)} highlight />
-              <Stat label="YTD materials" value={fmt(ytdMaterials)} />
-              <Stat label="YTD labor (all)" value={fmt(ytdLabor)} />
+              <Stat label="Actual tracked materials" value={fmt(ytdActualMaterials)} />
+              <Stat label="Estimated historical materials" value={fmt(ytdEstHistMaterials)} />
+              <Stat label="Total materials (incl. estimates)" value={fmt(ytdTotalMaterials)} />
+              <Stat label="Owner-Worker Pay (YTD)" value={fmt(ym.ownerPay)} />
+              <Stat label="Non-owner worker pay (YTD)" value={fmt(ym.workerLabor)} />
               <Stat label="YTD bills paid" value={fmt(ybizBills.paid)} />
               <Stat label="YTD debt paid" value={fmt(ybizDebt.paidThisMonth)} />
-              <Stat label="YTD profit (jobs only)" value={fmt(ytdProfit)} highlight />
+              <Stat label="YTD profit (jobs only)" value={fmt(ytdProfit)} />
+              <Stat label="Estimated YTD profit (incl. historical)" value={fmt(ytdEstProfitWithHistorical)} highlight />
             </div>
             <p className="text-[11px] text-muted-foreground">
               "Already spent" historical income counts in YTD income, but NOT in current cash.

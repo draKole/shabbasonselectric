@@ -58,7 +58,7 @@ export const SETTINGS_DEFAULTS: GlobalSettings = {
   default_burden_pct: "0",
   default_workers_comp_pct: "0",
   default_insurance_pct: "0",
-  default_ppe_monthly: "0",
+  default_ppe_monthly: "25",
   burden_in_reports: "no",
   burden_in_profit: "no",
   business_name: "Shabba & Sons Electric",
@@ -70,7 +70,7 @@ export const SETTINGS_DEFAULTS: GlobalSettings = {
   estimate_default_terms:
     "50% deposit due to schedule. Balance due upon completion. Estimate valid for 30 days.",
   owner_worker_id: "",
-  owner_default_hourly: "75",
+  owner_default_hourly: "50",
   owner_weekly_salary: "0",
   owner_pay_day: "friday",
   owner_pay_mode: "hourly",

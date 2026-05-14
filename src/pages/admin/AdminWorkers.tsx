@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList } from "lucide-react";
+import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList, KeyRound, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkerDocuments, WORKER_DOC_KEYS, seedWorkerDocs } from "@/lib/useWorkerDocuments";
 
@@ -299,8 +299,9 @@ export default function AdminWorkers() {
                   </div>
                   {wk.phone && <div className="text-xs text-muted-foreground">{wk.phone}{wk.email ? ` · ${wk.email}` : ""}</div>}
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   <Button size="sm" variant="outline" onClick={() => setOpenChecklist(wk.id)} className="gap-1"><ClipboardList className="h-3.5 w-3.5" />{onboardPct(wk.id)}%</Button>
+                  <WorkerLoginButton worker={wk} onDone={load} />
                   <Button size="sm" variant="outline" onClick={() => openEdit(wk)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="outline" onClick={() => setActive(wk.id, !wk.active)}>
                     {wk.active ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
@@ -553,6 +554,51 @@ function TimeReviewSection({ time, workers, jobs, reload }: { time: any[]; worke
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+function WorkerLoginButton({ worker, onDone }: { worker: any; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ email: string; password: string; login_url: string } | null>(null);
+  const status = worker.auth_user_id ? "Active" : (worker.invite_status === "sent" ? "Invited" : "Not invited");
+
+  async function invite() {
+    if (!worker.email) { toast.error("Add an email for this worker first"); return; }
+    const verb = worker.auth_user_id ? "Reset password for" : "Create login for";
+    if (!confirm(`${verb} ${worker.full_name}? A new temporary password will be generated.`)) return;
+    setBusy(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("worker-invite", { body: { worker_id: worker.id } });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).error);
+      setResult(data as any);
+      onDone();
+    } catch (e: any) {
+      toast.error(e.message || "Failed");
+    } finally { setBusy(false); }
+  }
+  function copy(v: string) { navigator.clipboard.writeText(v); toast.success("Copied"); }
+
+  return (
+    <>
+      <Button size="sm" variant="outline" disabled={busy} onClick={invite} className="gap-1" title={`Login: ${status}`}>
+        <KeyRound className="h-3.5 w-3.5" />{worker.auth_user_id ? "Reset" : "Invite"}
+      </Button>
+      <Dialog open={!!result} onOpenChange={(o) => !o && setResult(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Worker Login Created</DialogTitle></DialogHeader>
+          {result && (
+            <div className="space-y-2 text-sm">
+              <p className="text-xs text-muted-foreground">Share these securely with {worker.full_name}. Password is temporary.</p>
+              <div className="flex items-center gap-2"><b className="w-20">URL:</b><span className="flex-1 truncate">{result.login_url}</span><Button size="sm" variant="ghost" onClick={() => copy(result.login_url)}><Copy className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-2"><b className="w-20">Email:</b><span className="flex-1 truncate">{result.email}</span><Button size="sm" variant="ghost" onClick={() => copy(result.email)}><Copy className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-2"><b className="w-20">Password:</b><code className="flex-1 truncate bg-muted px-2 py-1 rounded">{result.password}</code><Button size="sm" variant="ghost" onClick={() => copy(result.password)}><Copy className="h-3.5 w-3.5" /></Button></div>
+              <div className="text-[11px] text-muted-foreground">Status: {status}. Worker only sees their own profile, time, paystubs, and documents.</div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
