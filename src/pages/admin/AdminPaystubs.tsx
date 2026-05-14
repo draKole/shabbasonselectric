@@ -130,26 +130,98 @@ export default function AdminPaystubs() {
         <Button onClick={generate} disabled={!worker || totalHours <= 0}>Generate Paystub</Button>
       </Card>
 
-      <Card className="p-4">
-        <h2 className="font-bold mb-2">Recent Paystubs</h2>
-        <div className="space-y-1">
-          {paystubs.map((p) => (
-            <div key={p.id} className="flex items-center justify-between border-b border-border py-2 text-sm">
-              <div>
-                <div className="font-semibold">{p.workers?.full_name || "—"}</div>
-                <div className="text-xs text-muted-foreground">{p.period_start} → {p.period_end} · paid {p.pay_date} · {Number(p.hours).toFixed(2)}h · gross {fmt(p.gross)} · net {fmt(p.net_pay)}</div>
+      {(() => {
+        const year = new Date().getFullYear();
+        const ytdStart = `${year}-01-01`;
+        const ytdMap = new Map<string, { gross: number; net: number; ded: number }>();
+        paystubs.forEach((p) => {
+          if (p.pay_date < ytdStart) return;
+          const cur = ytdMap.get(p.worker_id) || { gross: 0, net: 0, ded: 0 };
+          cur.gross += Number(p.gross || 0);
+          cur.net += Number(p.net_pay || 0);
+          cur.ded += Number(p.deductions_total || 0);
+          ytdMap.set(p.worker_id, cur);
+        });
+        const filtered = paystubs.filter((p) => {
+          if (filterWorker !== "all" && p.worker_id !== filterWorker) return false;
+          if (filterStatus !== "all" && (p.status || "") !== filterStatus) return false;
+          if (filterFrom && p.pay_date < filterFrom) return false;
+          if (filterTo && p.pay_date > filterTo) return false;
+          return true;
+        });
+        return (
+          <>
+            <Card className="p-4">
+              <h2 className="font-bold mb-2">YTD by worker — {year}</h2>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 text-sm">
+                {workers.map((w) => {
+                  const v = ytdMap.get(w.id) || { gross: 0, net: 0, ded: 0 };
+                  return (
+                    <div key={w.id} className="rounded border border-border p-2">
+                      <div className="font-semibold">{w.full_name}</div>
+                      <div className="text-xs grid grid-cols-3 gap-1 mt-1">
+                        <div><div className="text-muted-foreground">Gross</div><b>{fmt(v.gross)}</b></div>
+                        <div><div className="text-muted-foreground">Deduct</div><b>{fmt(v.ded)}</b></div>
+                        <div><div className="text-muted-foreground">Net</div><b>{fmt(v.net)}</b></div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="flex items-center gap-1">
-                <span className={`text-xs px-2 py-0.5 rounded ${p.status === "paid" ? "bg-success/15 text-success" : "bg-muted"}`}>{p.status}</span>
-                <Button size="sm" variant="ghost" onClick={() => setViewing(p)}>View</Button>
-                {p.status !== "paid" && <Button size="sm" variant="ghost" onClick={() => markPaid(p)}><Check className="h-3.5 w-3.5" /></Button>}
-                <Button size="sm" variant="ghost" onClick={() => voidPaystub(p)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+            </Card>
+
+            <Card className="p-4 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="font-bold">Recent Paystubs</h2>
+                <span className="text-xs text-muted-foreground">{filtered.length} shown</span>
               </div>
-            </div>
-          ))}
-          {paystubs.length === 0 && <p className="text-xs text-muted-foreground">No paystubs yet.</p>}
-        </div>
-      </Card>
+              <div className="grid sm:grid-cols-4 gap-2">
+                <div>
+                  <Label className="text-xs">Worker</Label>
+                  <Select value={filterWorker} onValueChange={setFilterWorker}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All workers</SelectItem>
+                      {workers.map((w) => <SelectItem key={w.id} value={w.id}>{w.full_name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Status</Label>
+                  <Select value={filterStatus} onValueChange={setFilterStatus}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="draft">Unpaid (draft)</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="void">Void</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">Pay date from</Label><Input type="date" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} /></div>
+                <div><Label className="text-xs">Pay date to</Label><Input type="date" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} /></div>
+              </div>
+              <div className="space-y-1">
+                {filtered.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between border-b border-border py-2 text-sm">
+                    <div>
+                      <div className="font-semibold">{p.workers?.full_name || "—"}</div>
+                      <div className="text-xs text-muted-foreground">{p.period_start} → {p.period_end} · paid {p.pay_date} · {Number(p.hours).toFixed(2)}h · gross {fmt(p.gross)} · net {fmt(p.net_pay)}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-xs px-2 py-0.5 rounded ${p.status === "paid" ? "bg-success/15 text-success" : "bg-muted"}`}>{p.status}</span>
+                      <Button size="sm" variant="ghost" onClick={() => setViewing(p)}>View</Button>
+                      {p.status !== "paid" && <Button size="sm" variant="ghost" onClick={() => markPaid(p)}><Check className="h-3.5 w-3.5" /></Button>}
+                      <Button size="sm" variant="ghost" onClick={() => voidPaystub(p)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </div>
+                  </div>
+                ))}
+                {filtered.length === 0 && <p className="text-xs text-muted-foreground">No paystubs match.</p>}
+              </div>
+            </Card>
+          </>
+        );
+      })()}
 
       {viewing && <PaystubModal p={viewing} settings={settings} workerName={viewing.workers?.full_name || "Worker"} onClose={() => setViewing(null)} />}
     </div>
