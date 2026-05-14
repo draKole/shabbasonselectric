@@ -168,6 +168,12 @@ export default function AdminWorkers() {
       return (wk.role || "").toLowerCase() === roleFilter || (wk.worker_type || "").toLowerCase() === roleFilter;
     })
     .filter((wk) => {
+      if (docFilter === "all") return true;
+      const pct = onboardPct(wk.id);
+      if (docFilter === "complete") return pct >= 100;
+      return pct < 100;
+    })
+    .filter((wk) => {
       if (!search.trim()) return true;
       const s = search.toLowerCase();
       return (wk.full_name || "").toLowerCase().includes(s) || (wk.phone || "").includes(s) || (wk.email || "").toLowerCase().includes(s);
