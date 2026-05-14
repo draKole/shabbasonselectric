@@ -33,15 +33,27 @@ export default function AdminWorkers() {
   const [editEntry, setEditEntry] = useState<any | null>(null);
 
   async function load() {
-    const [a, b, c, d] = await Promise.all([
+    const [a, b, c, d, e] = await Promise.all([
       supabase.from("workers").select("*").order("created_at"),
       supabase.from("worker_time_entries").select("*").order("work_date", { ascending: false }),
       supabase.from("worker_payments").select("*").order("paid_on", { ascending: false }),
       supabase.from("jobs").select("id, address, customers(name)").eq("archived", false).order("created_at", { ascending: false }).limit(100),
+      (supabase as any).from("worker_documents").select("*"),
     ]);
     setWorkers(a.data || []); setTime(b.data || []); setPays(c.data || []); setJobs(d.data || []);
+    setAllDocs((e.data as any) || []);
   }
   useEffect(() => { load(); }, []);
+
+  function docsFor(workerId: string) {
+    return allDocs.filter((d) => d.worker_id === workerId);
+  }
+  function onboardPct(workerId: string) {
+    const ds = docsFor(workerId);
+    if (ds.length === 0) return 0;
+    const done = ds.filter((d) => d.received).length;
+    return Math.round((done / WORKER_DOC_KEYS.length) * 100);
+  }
 
   function hoursThisWeek(id: string) {
     const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
