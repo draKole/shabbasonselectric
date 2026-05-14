@@ -107,9 +107,12 @@ export default function AdminReports() {
   const ytdHistoricalSpent = hist.items.filter(i => i.already_spent).reduce((s, i) => s + Number(i.amount || 0), 0);
   const ytdHistoricalCash = hist.cashAmount;
   const ytdTotalIncome = ytdActualPayments + ytdHistorical;
-  const ytdMaterials = ym.materialsMe;
+  const ytdActualMaterials = ym.materialsMe;
+  const ytdEstHistMaterials = hist.ytdEstMaterials;
+  const ytdTotalMaterials = ytdActualMaterials + ytdEstHistMaterials;
   const ytdLabor = ym.workerLabor + ym.ownerPay + (burdenOn ? ym.workerBurden : 0);
   const ytdProfit = ym.netProfit;
+  const ytdEstProfitWithHistorical = ytdProfit + (ytdHistorical - ytdEstHistMaterials);
 
   function exportMonth() {
     const rows: (string | number)[][] = [
