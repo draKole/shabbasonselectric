@@ -278,13 +278,17 @@ export default function AdminReports() {
               <Stat label="Historical imported income" value={fmt(ytdHistorical)} />
               <Stat label="Already spent (historical)" value={fmt(ytdHistoricalSpent)} />
               <Stat label="Current cash from historical" value={fmt(ytdHistoricalCash)} />
-              <Stat label="Actual job payments YTD" value={fmt(ytdActualPayments)} />
+              <Stat label="New tracked job payments YTD" value={fmt(ytdActualPayments)} />
               <Stat label="Total YTD business income" value={fmt(ytdTotalIncome)} highlight />
-              <Stat label="YTD materials" value={fmt(ytdMaterials)} />
-              <Stat label="YTD labor (all)" value={fmt(ytdLabor)} />
+              <Stat label="Actual tracked materials" value={fmt(ytdActualMaterials)} />
+              <Stat label="Estimated historical materials" value={fmt(ytdEstHistMaterials)} />
+              <Stat label="Total materials (incl. estimates)" value={fmt(ytdTotalMaterials)} />
+              <Stat label="Owner-Worker Pay (YTD)" value={fmt(ym.ownerPay)} />
+              <Stat label="Non-owner worker pay (YTD)" value={fmt(ym.workerLabor)} />
               <Stat label="YTD bills paid" value={fmt(ybizBills.paid)} />
               <Stat label="YTD debt paid" value={fmt(ybizDebt.paidThisMonth)} />
-              <Stat label="YTD profit (jobs only)" value={fmt(ytdProfit)} highlight />
+              <Stat label="YTD profit (jobs only)" value={fmt(ytdProfit)} />
+              <Stat label="Estimated YTD profit (incl. historical)" value={fmt(ytdEstProfitWithHistorical)} highlight />
             </div>
             <p className="text-[11px] text-muted-foreground">
               "Already spent" historical income counts in YTD income, but NOT in current cash.
