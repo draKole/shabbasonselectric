@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useGlobalSettings } from "@/lib/useGlobalSettings";
 import { computePaystub, PAYSTUB_DISCLAIMER } from "@/lib/paystubs";
 import { Trash2, Printer, Check } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function fmt(n: number) { return Number(n || 0).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }); }
 
