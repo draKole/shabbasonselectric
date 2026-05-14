@@ -237,7 +237,8 @@ function Row({ label, v, neg, bold, muted }: { label: string; v: number; neg?: b
   );
 }
 
-export function PaystubModal({ p, settings, workerName, onClose }: { p: any; settings: any; workerName: string; onClose: () => void }) {
+export function PaystubModal({ p, settings, workerName, workerRole, onClose }: { p: any; settings: any; workerName: string; workerRole?: string; onClose: () => void }) {
+  const periodLabel = `${p.period_start} → ${p.period_end}`;
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-start justify-center p-4 overflow-auto print:bg-transparent print:p-0 print:items-start" onClick={onClose}>
       <div className="bg-background w-full max-w-2xl rounded-lg shadow-xl p-6 print:shadow-none print:rounded-none" onClick={(e) => e.stopPropagation()}>
@@ -248,40 +249,75 @@ export function PaystubModal({ p, settings, workerName, onClose }: { p: any; set
             <Button size="sm" variant="outline" onClick={onClose}>Close</Button>
           </div>
         </div>
-        <div className="border-b pb-3 mb-3">
-          <div className="text-lg font-extrabold">{settings.paystub_company_name}</div>
-          <div className="text-xs text-muted-foreground">{settings.paystub_company_phone}{settings.paystub_company_address ? ` · ${settings.paystub_company_address}` : ""}</div>
+
+        {/* Company header */}
+        <div className="border-b-2 border-foreground pb-3 mb-4">
+          <div className="text-2xl font-extrabold tracking-tight">{settings.paystub_company_name || "Shabba & Sons Electric"}</div>
+          <div className="text-[11px] uppercase tracking-wider font-semibold text-secondary">Estimated Paystub / Payroll Planning</div>
+          <div className="text-xs text-muted-foreground mt-1">
+            {settings.paystub_company_phone || "614-671-8528"}
+            {settings.paystub_company_address ? ` · ${settings.paystub_company_address}` : ""}
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-sm mb-3">
-          <div><b>Worker:</b> {workerName}</div>
-          <div><b>Pay date:</b> {p.pay_date}</div>
-          <div><b>Period:</b> {p.period_start} → {p.period_end}</div>
-          <div><b>Hours:</b> {Number(p.hours).toFixed(2)} @ {fmt(p.hourly_rate)}/hr</div>
+
+        {/* Employee info */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mb-4">
+          <div><span className="text-muted-foreground">Employee:</span> <b>{workerName}</b></div>
+          <div><span className="text-muted-foreground">Pay Date:</span> <b>{p.pay_date}</b></div>
+          <div><span className="text-muted-foreground">Role:</span> <b>{workerRole || "—"}</b></div>
+          <div><span className="text-muted-foreground">Pay Period:</span> <b>{periodLabel}</b></div>
         </div>
-        <table className="w-full text-sm">
-          <tbody>
-            <tr className="border-t"><td className="py-1">Gross pay</td><td className="text-right font-semibold">{fmt(p.gross)}</td></tr>
-            <tr><td className="py-1">Federal withholding (est.)</td><td className="text-right">−{fmt(p.fed_wh)}</td></tr>
-            <tr><td className="py-1">Ohio withholding (est.)</td><td className="text-right">−{fmt(p.state_wh)}</td></tr>
-            <tr><td className="py-1">Columbus/local withholding (est.)</td><td className="text-right">−{fmt(p.local_wh)}</td></tr>
-            <tr><td className="py-1">FICA employee (est.)</td><td className="text-right">−{fmt(p.fica_ee)}</td></tr>
-            {Number(p.retirement) > 0 && <tr><td className="py-1">Retirement (planning)</td><td className="text-right">−{fmt(p.retirement)}</td></tr>}
-            <tr className="border-t"><td className="py-1 font-bold">Net pay</td><td className="text-right font-extrabold text-success">{fmt(p.net_pay)}</td></tr>
-          </tbody>
-        </table>
-        <div className="mt-4 pt-3 border-t">
-          <div className="text-xs font-semibold text-muted-foreground mb-1">Employer-side costs (not deducted from worker)</div>
+
+        {/* Earnings */}
+        <div className="mb-4">
+          <div className="text-xs uppercase font-bold text-muted-foreground border-b border-border pb-1 mb-1">Earnings</div>
+          <table className="w-full text-sm">
+            <tbody>
+              <tr><td className="py-1">Regular hours</td><td className="text-right">{Number(p.hours).toFixed(2)} h</td></tr>
+              <tr><td className="py-1">Hourly rate</td><td className="text-right">{fmt(p.hourly_rate)}/hr</td></tr>
+              <tr className="border-t"><td className="py-1 font-bold">Gross pay</td><td className="text-right font-bold">{fmt(p.gross)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Deductions */}
+        <div className="mb-4">
+          <div className="text-xs uppercase font-bold text-muted-foreground border-b border-border pb-1 mb-1">Estimated Deductions</div>
+          <table className="w-full text-sm">
+            <tbody>
+              <tr><td className="py-1">Federal withholding</td><td className="text-right">−{fmt(p.fed_wh)}</td></tr>
+              <tr><td className="py-1">Ohio withholding</td><td className="text-right">−{fmt(p.state_wh)}</td></tr>
+              <tr><td className="py-1">Columbus / local withholding</td><td className="text-right">−{fmt(p.local_wh)}</td></tr>
+              <tr><td className="py-1">FICA (employee)</td><td className="text-right">−{fmt(p.fica_ee)}</td></tr>
+              {Number(p.retirement) > 0 && <tr><td className="py-1">Retirement (planning)</td><td className="text-right">−{fmt(p.retirement)}</td></tr>}
+              <tr className="border-t"><td className="py-1 font-bold">Total deductions</td><td className="text-right font-bold">−{fmt(p.deductions_total)}</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Net pay */}
+        <div className="mb-4 rounded-md bg-success/10 border border-success/40 p-3 flex justify-between items-center">
+          <div className="text-sm font-bold uppercase tracking-wide">Net Pay</div>
+          <div className="text-2xl font-extrabold text-success">{fmt(p.net_pay)}</div>
+        </div>
+
+        {/* Employer planning cost */}
+        <div className="mb-3">
+          <div className="text-xs uppercase font-bold text-muted-foreground border-b border-border pb-1 mb-1">Employer Planning Cost (not deducted from worker)</div>
           <table className="w-full text-sm text-muted-foreground">
             <tbody>
               <tr><td className="py-0.5">Employer FICA</td><td className="text-right">{fmt(p.fica_er)}</td></tr>
-              <tr><td className="py-0.5">Workers comp</td><td className="text-right">{fmt(p.wc_amt)}</td></tr>
-              <tr><td className="py-0.5">Insurance</td><td className="text-right">{fmt(p.ins_amt)}</td></tr>
+              <tr><td className="py-0.5">Workers comp (estimate)</td><td className="text-right">{fmt(p.wc_amt)}</td></tr>
+              <tr><td className="py-0.5">Insurance (estimate)</td><td className="text-right">{fmt(p.ins_amt)}</td></tr>
               <tr><td className="py-0.5">PPE / tools allowance</td><td className="text-right">{fmt(p.ppe_amt)}</td></tr>
               <tr className="border-t"><td className="py-1 font-bold text-foreground">Total Cost to Business</td><td className="text-right font-bold text-foreground">{fmt(p.employer_total_cost)}</td></tr>
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] text-muted-foreground mt-4 italic">{PAYSTUB_DISCLAIMER}</p>
+
+        {p.notes && <div className="text-xs text-muted-foreground italic mb-2">Notes: {p.notes}</div>}
+
+        <p className="text-[10px] text-muted-foreground mt-4 italic border-t pt-2">{PAYSTUB_DISCLAIMER}</p>
       </div>
     </div>
   );
