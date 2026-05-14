@@ -85,8 +85,8 @@ export default function AdminHistoricalIncome() {
         <p className="text-xs text-muted-foreground">Log past income from screenshots so YTD reports stay accurate. Items marked <b>Already spent</b> count for YTD but do NOT inflate current cash.</p>
       </div>
 
-      <div className="rounded-md border border-warning/40 bg-warning/10 p-3 flex items-start gap-2 text-xs">
-        <AlertTriangle className="h-4 w-4 text-warning mt-0.5" />
+      <div className="rounded-md border border-secondary/40 bg-secondary/10 p-3 flex items-start gap-2 text-xs">
+        <AlertTriangle className="h-4 w-4 text-secondary mt-0.5" />
         <div>
           <b>Use this only for old catch-up money.</b> New money should be entered through Jobs and Payments. Materials should come from Job Materials. Don't keep adding monthly totals here.
         </div>
