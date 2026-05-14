@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList } from "lucide-react";
+import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList, KeyRound, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkerDocuments, WORKER_DOC_KEYS, seedWorkerDocs } from "@/lib/useWorkerDocuments";
 
