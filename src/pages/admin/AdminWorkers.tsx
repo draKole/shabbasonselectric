@@ -88,10 +88,14 @@ export default function AdminWorkers() {
       ppe_monthly: Number(w.ppe_monthly) || 0,
       notes: w.notes,
     };
-    const { error } = editing
-      ? await supabase.from("workers").update(payload).eq("id", editing.id)
-      : await supabase.from("workers").insert(payload);
-    if (error) return toast.error(error.message);
+    if (editing) {
+      const { error } = await supabase.from("workers").update(payload).eq("id", editing.id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { data: created, error } = await supabase.from("workers").insert(payload).select("id").single();
+      if (error) return toast.error(error.message);
+      if (created?.id) await seedWorkerDocs(created.id);
+    }
     setW(empty); setEditing(null); setAdding(false); load();
     toast.success("Saved");
   }
