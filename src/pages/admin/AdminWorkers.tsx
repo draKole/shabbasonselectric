@@ -225,8 +225,21 @@ export default function AdminWorkers() {
             </SelectContent>
           </Select>
         </div>
+        <div className="w-40">
+          <Label className="text-xs">Onboarding</Label>
+          <Select value={docFilter} onValueChange={(v: any) => setDocFilter(v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="missing">Missing documents</SelectItem>
+              <SelectItem value="complete">Fully onboarded</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="text-xs text-muted-foreground ml-auto">{visibleWorkers.length} of {workers.length}</div>
       </Card>
+
+      <TimeReviewSection time={time} workers={workers} jobs={jobs} reload={load} />
 
 
       <Dialog open={adding} onOpenChange={(o) => { setAdding(o); if (!o) { setEditing(null); setW(empty); } }}>
