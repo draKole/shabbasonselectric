@@ -7,8 +7,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
+import { useWorkerDocuments, WORKER_DOC_KEYS, seedWorkerDocs } from "@/lib/useWorkerDocuments";
 
 export default function AdminWorkers() {
   const [workers, setWorkers] = useState<any[]>([]);
@@ -19,6 +21,9 @@ export default function AdminWorkers() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"name" | "hours_week" | "balance" | "role">("name");
+  const [docFilter, setDocFilter] = useState<"all" | "missing" | "complete">("all");
+  const [allDocs, setAllDocs] = useState<any[]>([]);
+  const [openChecklist, setOpenChecklist] = useState<string | null>(null);
   const [editing, setEditing] = useState<any | null>(null);
   const [adding, setAdding] = useState(false);
   const empty = { full_name: "", phone: "", email: "", role: "helper", pay_type: "hourly", hourly_rate: "25", tax_pct: "0", workers_comp_pct: "0", insurance_pct: "0", ppe_monthly: "0", notes: "" };
@@ -28,15 +33,27 @@ export default function AdminWorkers() {
   const [editEntry, setEditEntry] = useState<any | null>(null);
 
   async function load() {
-    const [a, b, c, d] = await Promise.all([
+    const [a, b, c, d, e] = await Promise.all([
       supabase.from("workers").select("*").order("created_at"),
       supabase.from("worker_time_entries").select("*").order("work_date", { ascending: false }),
       supabase.from("worker_payments").select("*").order("paid_on", { ascending: false }),
       supabase.from("jobs").select("id, address, customers(name)").eq("archived", false).order("created_at", { ascending: false }).limit(100),
+      (supabase as any).from("worker_documents").select("*"),
     ]);
     setWorkers(a.data || []); setTime(b.data || []); setPays(c.data || []); setJobs(d.data || []);
+    setAllDocs((e.data as any) || []);
   }
   useEffect(() => { load(); }, []);
+
+  function docsFor(workerId: string) {
+    return allDocs.filter((d) => d.worker_id === workerId);
+  }
+  function onboardPct(workerId: string) {
+    const ds = docsFor(workerId);
+    if (ds.length === 0) return 0;
+    const done = ds.filter((d) => d.received).length;
+    return Math.round((done / WORKER_DOC_KEYS.length) * 100);
+  }
 
   function hoursThisWeek(id: string) {
     const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
@@ -71,10 +88,14 @@ export default function AdminWorkers() {
       ppe_monthly: Number(w.ppe_monthly) || 0,
       notes: w.notes,
     };
-    const { error } = editing
-      ? await supabase.from("workers").update(payload).eq("id", editing.id)
-      : await supabase.from("workers").insert(payload);
-    if (error) return toast.error(error.message);
+    if (editing) {
+      const { error } = await supabase.from("workers").update(payload).eq("id", editing.id);
+      if (error) return toast.error(error.message);
+    } else {
+      const { data: created, error } = await supabase.from("workers").insert(payload).select("id").single();
+      if (error) return toast.error(error.message);
+      if (created?.id) await seedWorkerDocs(created.id);
+    }
     setW(empty); setEditing(null); setAdding(false); load();
     toast.success("Saved");
   }
@@ -147,6 +168,12 @@ export default function AdminWorkers() {
       return (wk.role || "").toLowerCase() === roleFilter || (wk.worker_type || "").toLowerCase() === roleFilter;
     })
     .filter((wk) => {
+      if (docFilter === "all") return true;
+      const pct = onboardPct(wk.id);
+      if (docFilter === "complete") return pct >= 100;
+      return pct < 100;
+    })
+    .filter((wk) => {
       if (!search.trim()) return true;
       const s = search.toLowerCase();
       return (wk.full_name || "").toLowerCase().includes(s) || (wk.phone || "").includes(s) || (wk.email || "").toLowerCase().includes(s);
@@ -198,8 +225,21 @@ export default function AdminWorkers() {
             </SelectContent>
           </Select>
         </div>
+        <div className="w-40">
+          <Label className="text-xs">Onboarding</Label>
+          <Select value={docFilter} onValueChange={(v: any) => setDocFilter(v)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="missing">Missing documents</SelectItem>
+              <SelectItem value="complete">Fully onboarded</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="text-xs text-muted-foreground ml-auto">{visibleWorkers.length} of {workers.length}</div>
       </Card>
+
+      <TimeReviewSection time={time} workers={workers} jobs={jobs} reload={load} />
 
 
       <Dialog open={adding} onOpenChange={(o) => { setAdding(o); if (!o) { setEditing(null); setW(empty); } }}>
@@ -260,6 +300,7 @@ export default function AdminWorkers() {
                   {wk.phone && <div className="text-xs text-muted-foreground">{wk.phone}{wk.email ? ` · ${wk.email}` : ""}</div>}
                 </div>
                 <div className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => setOpenChecklist(wk.id)} className="gap-1"><ClipboardList className="h-3.5 w-3.5" />{onboardPct(wk.id)}%</Button>
                   <Button size="sm" variant="outline" onClick={() => openEdit(wk)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="outline" onClick={() => setActive(wk.id, !wk.active)}>
                     {wk.active ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
@@ -273,7 +314,13 @@ export default function AdminWorkers() {
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Paid out</div><div className="font-bold text-base">${b.paid.toFixed(0)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Owe worker</div><div className={`font-bold text-base ${b.balance > 0 ? "text-destructive" : "text-success"}`}>${b.balance.toFixed(0)}</div></div>
               </div>
-              <div className="text-[10px] text-muted-foreground mt-1">True hourly cost ≈ ${trueRate.toFixed(0)} (includes extra worker cost)</div>
+              <div className="text-[10px] text-muted-foreground mt-1">Total Cost to Business ≈ ${trueRate.toFixed(0)}/hr (includes Extra Worker Cost)</div>
+              <div className="mt-2">
+                <div className="h-1.5 rounded bg-muted overflow-hidden">
+                  <div className="h-full bg-success" style={{ width: `${onboardPct(wk.id)}%` }} />
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Onboarding {onboardPct(wk.id)}%</div>
+              </div>
 
 
               {/* time entries for this worker */}
@@ -355,6 +402,157 @@ export default function AdminWorkers() {
         <Input placeholder="Notes" value={pay.notes} onChange={(e) => setPay({ ...pay, notes: e.target.value })} />
         <Button onClick={logPayment} className="w-full bg-success text-success-foreground hover:bg-success/90">Record Payment</Button>
       </Card>
+
+      <OnboardingDialog
+        workerId={openChecklist}
+        workerName={workers.find(w => w.id === openChecklist)?.full_name || ""}
+        onClose={() => { setOpenChecklist(null); load(); }}
+      />
     </div>
   );
 }
+
+function OnboardingDialog({ workerId, workerName, onClose }: { workerId: string | null; workerName: string; onClose: () => void }) {
+  const { docs, setReceived, reload } = useWorkerDocuments(workerId);
+  const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
+
+  async function saveNotes(docKey: string, value: string) {
+    const existing = docs.find(d => d.doc_key === docKey);
+    if (existing) {
+      await (supabase as any).from("worker_documents").update({ notes: value }).eq("id", existing.id);
+    } else if (workerId) {
+      await (supabase as any).from("worker_documents").insert({ worker_id: workerId, doc_key: docKey, received: false, notes: value });
+    }
+    reload();
+  }
+
+  return (
+    <Dialog open={!!workerId} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader><DialogTitle>Onboarding · {workerName}</DialogTitle></DialogHeader>
+        <div className="space-y-2">
+          {WORKER_DOC_KEYS.map((d) => {
+            const doc = docs.find((x) => x.doc_key === d.key);
+            const notes = editingNotes[d.key] ?? doc?.notes ?? "";
+            return (
+              <div key={d.key} className="rounded border border-border p-2">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={!!doc?.received}
+                      onCheckedChange={(v) => setReceived(d.key, !!v)}
+                    />
+                    <span className="font-semibold text-sm">{d.label}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{doc?.received_on || (doc?.received ? "today" : "—")}</span>
+                </div>
+                <Input
+                  placeholder="Notes (optional)"
+                  className="mt-2 h-8 text-xs"
+                  value={notes}
+                  onChange={(e) => setEditingNotes((s) => ({ ...s, [d.key]: e.target.value }))}
+                  onBlur={(e) => saveNotes(d.key, e.target.value)}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TimeReviewSection({ time, workers, jobs, reload }: { time: any[]; workers: any[]; jobs: any[]; reload: () => void }) {
+  const [edit, setEdit] = useState<any | null>(null);
+  const pending = time.filter((t) => t.status === "submitted" || (!t.approved && !t.paid && (t.status || "approved") !== "rejected"));
+  const wMap = new Map(workers.map((w: any) => [w.id, w]));
+  const jMap = new Map(jobs.map((j: any) => [j.id, j]));
+
+  async function approve(t: any) {
+    const w = wMap.get(t.worker_id);
+    const rate = Number(t.hourly_rate || w?.hourly_rate || 0);
+    const hours = Number(t.hours || 0);
+    await supabase.from("worker_time_entries").update({
+      approved: true, status: "approved", approved_at: new Date().toISOString(),
+      hourly_rate: rate, amount: hours * rate, rejected_reason: null,
+    } as any).eq("id", t.id);
+    reload();
+  }
+  async function reject(t: any) {
+    const reason = prompt("Reason for rejection?") || "";
+    await supabase.from("worker_time_entries").update({
+      approved: false, status: "rejected", rejected_reason: reason,
+    } as any).eq("id", t.id);
+    reload();
+  }
+  async function saveEdit() {
+    if (!edit) return;
+    const hours = Number(edit.hours) || 0;
+    const rate = Number(edit.hourly_rate) || 0;
+    await supabase.from("worker_time_entries").update({
+      hours, hourly_rate: rate, amount: hours * rate,
+      work_date: edit.work_date, job_id: edit.job_id || null, notes: edit.notes || null,
+    }).eq("id", edit.id);
+    setEdit(null); reload();
+  }
+
+  if (pending.length === 0) {
+    return (
+      <Card className="p-3 text-xs text-muted-foreground">
+        Time Review: no pending time entries. Workers can submit hours from their portal.
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="p-4 space-y-2">
+      <h2 className="font-bold flex items-center gap-2"><Clock className="h-4 w-4" />Time Review ({pending.length} pending)</h2>
+      <div className="text-xs text-muted-foreground">Approved unpaid hours flow into Paystubs.</div>
+      <div className="space-y-1">
+        {pending.map((t) => {
+          const w = wMap.get(t.worker_id);
+          const j = t.job_id ? jMap.get(t.job_id) : null;
+          const rate = Number(t.hourly_rate || w?.hourly_rate || 0);
+          const hours = Number(t.hours || 0);
+          const est = hours * rate;
+          return (
+            <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2 text-sm">
+              <div className="min-w-0">
+                <div className="font-semibold">{w?.full_name || "—"} · {hours.toFixed(2)}h · est ${est.toFixed(0)}</div>
+                <div className="text-xs text-muted-foreground truncate">{t.work_date} · {j ? `${j.customers?.name || ""} · ${j.address || ""}` : "no job"}{t.notes ? ` · ${t.notes}` : ""}</div>
+              </div>
+              <div className="flex gap-1">
+                <Button size="sm" variant="outline" onClick={() => setEdit({ ...t })}><Pencil className="h-3.5 w-3.5" /></Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => approve(t)}><Check className="h-3.5 w-3.5" />Approve</Button>
+                <Button size="sm" variant="ghost" className="text-destructive gap-1" onClick={() => reject(t)}><X className="h-3.5 w-3.5" />Reject</Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Edit Time Entry</DialogTitle></DialogHeader>
+          {edit && (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label>Date</Label><Input type="date" value={edit.work_date} onChange={(e) => setEdit({ ...edit, work_date: e.target.value })} /></div>
+                <div><Label>Hours</Label><Input type="number" step="0.25" value={edit.hours} onChange={(e) => setEdit({ ...edit, hours: e.target.value })} /></div>
+                <div><Label>Rate</Label><Input type="number" value={edit.hourly_rate} onChange={(e) => setEdit({ ...edit, hourly_rate: e.target.value })} /></div>
+                <div><Label>Job</Label>
+                  <Select value={edit.job_id || ""} onValueChange={(v) => setEdit({ ...edit, job_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="No job" /></SelectTrigger>
+                    <SelectContent>{jobs.map((j: any) => <SelectItem key={j.id} value={j.id}>{j.customers?.name || "—"} · {j.address}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="col-span-2"><Label>Notes</Label><Input value={edit.notes || ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></div>
+              </div>
+              <Button onClick={saveEdit} className="w-full">Save</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
