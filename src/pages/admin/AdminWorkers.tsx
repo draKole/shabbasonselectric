@@ -300,6 +300,7 @@ export default function AdminWorkers() {
                   {wk.phone && <div className="text-xs text-muted-foreground">{wk.phone}{wk.email ? ` · ${wk.email}` : ""}</div>}
                 </div>
                 <div className="flex gap-1">
+                  <Button size="sm" variant="outline" onClick={() => setOpenChecklist(wk.id)} className="gap-1"><ClipboardList className="h-3.5 w-3.5" />{onboardPct(wk.id)}%</Button>
                   <Button size="sm" variant="outline" onClick={() => openEdit(wk)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="outline" onClick={() => setActive(wk.id, !wk.active)}>
                     {wk.active ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
@@ -313,7 +314,13 @@ export default function AdminWorkers() {
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Paid out</div><div className="font-bold text-base">${b.paid.toFixed(0)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Owe worker</div><div className={`font-bold text-base ${b.balance > 0 ? "text-destructive" : "text-success"}`}>${b.balance.toFixed(0)}</div></div>
               </div>
-              <div className="text-[10px] text-muted-foreground mt-1">True hourly cost ≈ ${trueRate.toFixed(0)} (includes extra worker cost)</div>
+              <div className="text-[10px] text-muted-foreground mt-1">Total Cost to Business ≈ ${trueRate.toFixed(0)}/hr (includes Extra Worker Cost)</div>
+              <div className="mt-2">
+                <div className="h-1.5 rounded bg-muted overflow-hidden">
+                  <div className="h-full bg-success" style={{ width: `${onboardPct(wk.id)}%` }} />
+                </div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">Onboarding {onboardPct(wk.id)}%</div>
+              </div>
 
 
               {/* time entries for this worker */}
