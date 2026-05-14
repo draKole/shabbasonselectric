@@ -174,20 +174,26 @@ export default function AdminReports() {
         <TabsContent value="business" className="space-y-4">
           <Card className="p-5 space-y-3">
             <h2 className="font-bold">Business Report — {month}</h2>
+            <div className="text-[11px] text-muted-foreground -mt-1">Actual tracked data + historical catch-up shown separately.</div>
             <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
-              <Stat label="Gross collected" value={fmt(m.collected)} />
-              <Stat label="Materials paid by me" value={fmt(m.materialsMe)} />
-              <Stat label="Non-owner worker pay" value={fmt(m.workerLabor)} />
+              <Stat label="New tracked job payments" value={fmt(m.collected)} />
+              <Stat label="Historical catch-up income" value={fmt(monthHistTotal)} />
+              <Stat label="Total income (month)" value={fmt(m.collected + monthHistTotal)} highlight />
+              <Stat label="Cash impact (historical)" value={fmt(monthHistCash)} sub={monthHistSpent > 0 ? `${fmt(monthHistSpent)} already spent` : undefined} />
+              <Stat label="Actual tracked materials" value={fmt(m.materialsMe)} />
+              <Stat label="Estimated historical materials" value={fmt(monthHistMats)} />
+              <Stat label="Total materials (incl. estimates)" value={fmt(m.materialsMe + monthHistMats)} />
               <Stat label="Owner-Worker Pay" value={fmt(m.ownerPay)} />
-              <Stat label="Other job expenses" value={fmt(m.otherExp)} />
+              <Stat label="Non-owner worker pay" value={fmt(m.workerLabor)} />
               <Stat label="Extra Worker Cost" value={fmt(m.workerBurden)} />
-              <Stat label="Total Cost to Business (labor)" value={fmt(totalLabor)} />
+              <Stat label="Other job expenses" value={fmt(m.otherExp)} />
               <Stat label="Business bills paid" value={fmt(bizBills.paid)} />
               <Stat label="Business debt paid" value={fmt(bizDebt.paidThisMonth)} />
               <Stat label="Tax reserve" value={fmt(bizTaxReserve)} />
-              <Stat label="Business profit" value={fmt(businessProfit)} highlight />
+              <Stat label="Business profit estimate" value={fmt(businessProfit + (monthHistTotal - monthHistMats))} highlight />
               <Stat label="Cash after obligations" value={fmt(bizCash)} highlight />
             </div>
+            <p className="text-[11px] text-muted-foreground">Historical catch-up money is included in profit estimate but does NOT add to current cash if marked already spent.</p>
           </Card>
           <Card className="p-4">
             <div className="flex items-center justify-between mb-2">
