@@ -36,8 +36,8 @@ export default function AdminPaystubs() {
     ]);
     setWorkers((ws as any) || []);
     // attach worker name from ws
-    const map = new Map<string, string>(((ws as any) || []).map((w: any) => [w.id, w.full_name]));
-    setPaystubs(((ps as any) || []).map((p: any) => ({ ...p, workers: { full_name: map.get(p.worker_id) || "" } })));
+    const wmap = new Map<string, any>(((ws as any) || []).map((w: any) => [w.id, w]));
+    setPaystubs(((ps as any) || []).map((p: any) => ({ ...p, workers: wmap.get(p.worker_id) || { full_name: "", role: "" } })));
   }
   useEffect(() => { load(); }, []);
 
