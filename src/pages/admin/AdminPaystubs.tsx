@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 function fmt(n: number) { return Number(n || 0).toLocaleString("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }); }
 
-type Worker = { id: string; full_name: string; hourly_rate: number; workers_comp_pct: number; insurance_pct: number; ppe_monthly: number; is_owner: boolean };
+type Worker = { id: string; full_name: string; role?: string; hourly_rate: number; workers_comp_pct: number; insurance_pct: number; ppe_monthly: number; is_owner: boolean };
 
 export default function AdminPaystubs() {
   const { settings } = useGlobalSettings();
