@@ -24,6 +24,10 @@ export default function AdminPaystubs() {
   const [form, setForm] = useState({ worker_id: "", period_start: weekAgo, period_end: today, pay_date: today, notes: "" });
   const [previewEntries, setPreviewEntries] = useState<any[]>([]);
   const [viewing, setViewing] = useState<any>(null);
+  const [filterWorker, setFilterWorker] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterFrom, setFilterFrom] = useState<string>("");
+  const [filterTo, setFilterTo] = useState<string>("");
 
   async function load() {
     const [{ data: ws }, { data: ps }] = await Promise.all([
