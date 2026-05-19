@@ -1,0 +1,1 @@
+ALTER TABLE public.historical_income ALTER COLUMN est_materials_pct SET DEFAULT 72.5;
