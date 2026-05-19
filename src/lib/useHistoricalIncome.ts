@@ -21,7 +21,7 @@ export function estMaterials(i: HistoricalIncome): number {
   if (i.est_materials_amount != null && Number.isFinite(Number(i.est_materials_amount))) {
     return Number(i.est_materials_amount);
   }
-  return Number(i.amount || 0) * (Number(i.est_materials_pct ?? 70) / 100);
+  return Number(i.amount || 0) * (Number(i.est_materials_pct ?? 72.5) / 100);
 }
 
 export function useHistoricalIncome(scope: "business" | "personal" | "all", from?: string, to?: string) {

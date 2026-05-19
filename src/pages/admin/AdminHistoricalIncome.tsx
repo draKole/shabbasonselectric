@@ -20,7 +20,7 @@ export default function AdminHistoricalIncome() {
     customer_name: "", description: "", amount: "",
     scope: "business" as "business" | "personal",
     already_spent: true, count_in_ytd: true, count_in_cash: false, notes: "",
-    est_materials_pct: "70", est_materials_amount: "",
+    est_materials_pct: "72.5", est_materials_amount: "",
   });
 
   async function load() {
@@ -38,7 +38,7 @@ export default function AdminHistoricalIncome() {
       already_spent: form.already_spent, count_in_ytd: form.count_in_ytd,
       count_in_cash: form.already_spent ? false : form.count_in_cash,
       notes: form.notes || null,
-      est_materials_pct: parseFloat(form.est_materials_pct) || 70,
+      est_materials_pct: parseFloat(form.est_materials_pct) || 72.5,
       est_materials_amount: form.est_materials_amount ? parseFloat(form.est_materials_amount) : null,
     });
     if (error) return toast.error(error.message);
@@ -58,7 +58,7 @@ export default function AdminHistoricalIncome() {
       already_spent: editing.already_spent, count_in_ytd: editing.count_in_ytd,
       count_in_cash: editing.already_spent ? false : editing.count_in_cash,
       notes: editing.notes,
-      est_materials_pct: Number(editing.est_materials_pct) || 70,
+      est_materials_pct: Number(editing.est_materials_pct) || 72.5,
       est_materials_amount: editing.est_materials_amount,
     }).eq("id", editing.id);
     if (error) return toast.error(error.message);
