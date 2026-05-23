@@ -50,6 +50,17 @@ export type GlobalSettings = {
   paystub_company_name: string;
   paystub_company_phone: string;
   paystub_company_address: string;
+  // Employee Savings (worker-owned)
+  savings_enabled_default: string;
+  savings_default_type: string;
+  savings_default_pct: string;
+  savings_default_fixed: string;
+  savings_require_auth: string;
+  savings_policy_text: string;
+  savings_destination_note: string;
+  // Vouchers
+  voucher_default_terms: string;
+  voucher_min_schedule_days: string;
 };
 
 export const SETTINGS_DEFAULTS: GlobalSettings = {
