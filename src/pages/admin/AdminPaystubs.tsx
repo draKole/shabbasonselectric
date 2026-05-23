@@ -305,10 +305,17 @@ export function PaystubModal({ p, settings, workerName, workerRole, onClose }: {
               <tr><td className="py-1">Columbus / local withholding</td><td className="text-right">−{fmt(p.local_wh)}</td></tr>
               <tr><td className="py-1">FICA (employee)</td><td className="text-right">−{fmt(p.fica_ee)}</td></tr>
               {Number(p.retirement) > 0 && <tr><td className="py-1">Retirement (planning)</td><td className="text-right">−{fmt(p.retirement)}</td></tr>}
+              {Number(p.employee_savings) > 0 && <tr><td className="py-1">Employee Savings <span className="text-[10px] text-muted-foreground">(worker-owned)</span></td><td className="text-right">−{fmt(p.employee_savings)}</td></tr>}
               <tr className="border-t"><td className="py-1 font-bold">Total deductions</td><td className="text-right font-bold">−{fmt(p.deductions_total)}</td></tr>
             </tbody>
           </table>
         </div>
+
+        {Number(p.employee_savings) > 0 && (
+          <div className="mb-3 rounded-md bg-muted/30 p-2 text-[11px] text-muted-foreground">
+            Worker-owned savings deduction reduces net pay but remains owed to the worker.
+          </div>
+        )}
 
         {/* Net pay */}
         <div className="mb-4 rounded-md bg-success/10 border border-success/40 p-3 flex justify-between items-center">
