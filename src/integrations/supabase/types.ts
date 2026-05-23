@@ -938,6 +938,7 @@ export type Database = {
         Row: {
           created_at: string
           deductions_total: number
+          employee_savings: number
           employer_total_cost: number
           fed_wh: number
           fica_ee: number
@@ -965,6 +966,7 @@ export type Database = {
         Insert: {
           created_at?: string
           deductions_total?: number
+          employee_savings?: number
           employer_total_cost?: number
           fed_wh?: number
           fica_ee?: number
@@ -992,6 +994,7 @@ export type Database = {
         Update: {
           created_at?: string
           deductions_total?: number
+          employee_savings?: number
           employer_total_cost?: number
           fed_wh?: number
           fica_ee?: number
@@ -1254,6 +1257,75 @@ export type Database = {
           },
         ]
       }
+      service_vouchers: {
+        Row: {
+          amount_paid: number
+          code: string
+          created_at: string
+          credit_used: number
+          credit_value: number
+          customer_email: string | null
+          customer_id: string | null
+          customer_name_snapshot: string | null
+          customer_phone: string | null
+          expires_on: string | null
+          id: string
+          labor_only: boolean
+          materials_included: boolean
+          notes: string | null
+          offer_id: string | null
+          payment_method: string | null
+          purchase_date: string
+          status: string
+          terms: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number
+          code: string
+          created_at?: string
+          credit_used?: number
+          credit_value?: number
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name_snapshot?: string | null
+          customer_phone?: string | null
+          expires_on?: string | null
+          id?: string
+          labor_only?: boolean
+          materials_included?: boolean
+          notes?: string | null
+          offer_id?: string | null
+          payment_method?: string | null
+          purchase_date?: string
+          status?: string
+          terms?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number
+          code?: string
+          created_at?: string
+          credit_used?: number
+          credit_value?: number
+          customer_email?: string | null
+          customer_id?: string | null
+          customer_name_snapshot?: string | null
+          customer_phone?: string | null
+          expires_on?: string | null
+          id?: string
+          labor_only?: boolean
+          materials_included?: boolean
+          notes?: string | null
+          offer_id?: string | null
+          payment_method?: string | null
+          purchase_date?: string
+          status?: string
+          terms?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1272,6 +1344,120 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      voucher_offers: {
+        Row: {
+          active: boolean
+          amount_paid: number
+          bonus: number
+          created_at: string
+          credit_value: number
+          display_order: number
+          id: string
+          labor_only: boolean
+          materials_included: boolean
+          max_per_job: number | null
+          min_job_size: number | null
+          name: string
+          terms: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount_paid?: number
+          bonus?: number
+          created_at?: string
+          credit_value?: number
+          display_order?: number
+          id?: string
+          labor_only?: boolean
+          materials_included?: boolean
+          max_per_job?: number | null
+          min_job_size?: number | null
+          name: string
+          terms?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount_paid?: number
+          bonus?: number
+          created_at?: string
+          credit_value?: number
+          display_order?: number
+          id?: string
+          labor_only?: boolean
+          materials_included?: boolean
+          max_per_job?: number | null
+          min_job_size?: number | null
+          name?: string
+          terms?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      voucher_redemptions: {
+        Row: {
+          amount_applied: number
+          applied_on: string
+          created_at: string
+          id: string
+          job_id: string | null
+          notes: string | null
+          voucher_id: string
+        }
+        Insert: {
+          amount_applied?: number
+          applied_on?: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          voucher_id: string
+        }
+        Update: {
+          amount_applied?: number
+          applied_on?: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          notes?: string | null
+          voucher_id?: string
+        }
+        Relationships: []
+      }
+      voucher_requests: {
+        Row: {
+          created_at: string
+          customer_name: string
+          email: string | null
+          id: string
+          notes: string | null
+          offer_id: string | null
+          phone: string | null
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          offer_id?: string | null
+          phone?: string | null
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          email?: string | null
+          id?: string
+          notes?: string | null
+          offer_id?: string | null
+          phone?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -1334,6 +1520,45 @@ export type Database = {
           method?: string
           notes?: string | null
           paid_on?: string
+          worker_id?: string
+        }
+        Relationships: []
+      }
+      worker_savings_ledger: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          entry_date: string
+          id: string
+          method: string | null
+          notes: string | null
+          paystub_id: string | null
+          txn_type: string
+          worker_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paystub_id?: string | null
+          txn_type?: string
+          worker_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          entry_date?: string
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paystub_id?: string | null
+          txn_type?: string
           worker_id?: string
         }
         Relationships: []
@@ -1425,6 +1650,14 @@ export type Database = {
           phone: string | null
           ppe_monthly: number
           role: string
+          savings_auth_date: string | null
+          savings_auth_received: boolean
+          savings_destination: string | null
+          savings_enabled: boolean
+          savings_fixed: number
+          savings_notes: string | null
+          savings_pct: number
+          savings_type: string
           tax_pct: number
           updated_at: string
           weekly_salary: number
@@ -1451,6 +1684,14 @@ export type Database = {
           phone?: string | null
           ppe_monthly?: number
           role?: string
+          savings_auth_date?: string | null
+          savings_auth_received?: boolean
+          savings_destination?: string | null
+          savings_enabled?: boolean
+          savings_fixed?: number
+          savings_notes?: string | null
+          savings_pct?: number
+          savings_type?: string
           tax_pct?: number
           updated_at?: string
           weekly_salary?: number
@@ -1477,6 +1718,14 @@ export type Database = {
           phone?: string | null
           ppe_monthly?: number
           role?: string
+          savings_auth_date?: string | null
+          savings_auth_received?: boolean
+          savings_destination?: string | null
+          savings_enabled?: boolean
+          savings_fixed?: number
+          savings_notes?: string | null
+          savings_pct?: number
+          savings_type?: string
           tax_pct?: number
           updated_at?: string
           weekly_salary?: number

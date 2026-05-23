@@ -31,11 +31,10 @@ export default function AdminPaystubs() {
 
   async function load() {
     const [{ data: ws }, { data: ps }] = await Promise.all([
-      supabase.from("workers").select("id, full_name, role, hourly_rate, workers_comp_pct, insurance_pct, ppe_monthly, is_owner").eq("active", true).order("full_name"),
+      supabase.from("workers").select("id, full_name, role, hourly_rate, workers_comp_pct, insurance_pct, ppe_monthly, is_owner, savings_enabled, savings_type, savings_pct, savings_fixed, savings_auth_received").eq("active", true).order("full_name"),
       (supabase as any).from("paystubs").select("*").order("pay_date", { ascending: false }).limit(100),
     ]);
     setWorkers((ws as any) || []);
-    // attach worker name from ws
     const wmap = new Map<string, any>(((ws as any) || []).map((w: any) => [w.id, w]));
     setPaystubs(((ps as any) || []).map((p: any) => ({ ...p, workers: wmap.get(p.worker_id) || { full_name: "", role: "" } })));
   }
@@ -60,11 +59,18 @@ export default function AdminPaystubs() {
     hours: totalHours, hourly_rate: rate,
     worker_wc_pct: worker.workers_comp_pct, worker_ins_pct: worker.insurance_pct, worker_ppe_monthly: worker.ppe_monthly,
     period_days: periodDays,
+    savings_enabled: (worker as any).savings_enabled && (worker as any).savings_auth_received,
+    savings_type: (worker as any).savings_type,
+    savings_pct: Number((worker as any).savings_pct || 0),
+    savings_fixed: Number((worker as any).savings_fixed || 0),
   }, settings) : null, [worker, totalHours, rate, periodDays, settings]);
 
   async function generate() {
     if (!worker || !breakdown) return toast.error("Pick a worker");
     if (totalHours <= 0) return toast.error("No approved unpaid hours in this range");
+    if ((worker as any).savings_enabled && !(worker as any).savings_auth_received) {
+      if (!confirm("Worker savings is enabled but authorization is NOT received. Continue WITHOUT savings deduction?")) return;
+    }
     const { data: created, error } = await (supabase as any).from("paystubs").insert({
       worker_id: worker.id, period_start: form.period_start, period_end: form.period_end, pay_date: form.pay_date,
       ...breakdown, notes: form.notes || null, status: "draft",
@@ -73,6 +79,14 @@ export default function AdminPaystubs() {
     // link entries
     await supabase.from("worker_time_entries").update({ paystub_id: created.id, paid: true, paid_at: new Date().toISOString(), status: "paid" } as any)
       .in("id", previewEntries.map(e => e.id));
+    // record savings withholding to ledger
+    if (breakdown.employee_savings > 0) {
+      await (supabase as any).from("worker_savings_ledger").insert({
+        worker_id: worker.id, txn_type: "withheld", amount: breakdown.employee_savings,
+        paystub_id: created.id, entry_date: form.pay_date,
+        notes: `Withheld from paystub ${form.period_start} → ${form.period_end}`,
+      });
+    }
     toast.success("Paystub generated"); load();
   }
 
@@ -118,6 +132,7 @@ export default function AdminPaystubs() {
               <Row label="Local WH" v={breakdown.local_wh} neg />
               <Row label="FICA (employee)" v={breakdown.fica_ee} neg />
               {breakdown.retirement > 0 && <Row label="Retirement (planning)" v={breakdown.retirement} neg />}
+              {breakdown.employee_savings > 0 && <Row label="Employee Savings (worker-owned)" v={breakdown.employee_savings} neg />}
               <Row label="Net Pay" v={breakdown.net_pay} bold />
               <Row label="Employer FICA" v={breakdown.fica_er} muted />
               <Row label="Workers Comp" v={breakdown.wc_amt} muted />
@@ -290,10 +305,17 @@ export function PaystubModal({ p, settings, workerName, workerRole, onClose }: {
               <tr><td className="py-1">Columbus / local withholding</td><td className="text-right">−{fmt(p.local_wh)}</td></tr>
               <tr><td className="py-1">FICA (employee)</td><td className="text-right">−{fmt(p.fica_ee)}</td></tr>
               {Number(p.retirement) > 0 && <tr><td className="py-1">Retirement (planning)</td><td className="text-right">−{fmt(p.retirement)}</td></tr>}
+              {Number(p.employee_savings) > 0 && <tr><td className="py-1">Employee Savings <span className="text-[10px] text-muted-foreground">(worker-owned)</span></td><td className="text-right">−{fmt(p.employee_savings)}</td></tr>}
               <tr className="border-t"><td className="py-1 font-bold">Total deductions</td><td className="text-right font-bold">−{fmt(p.deductions_total)}</td></tr>
             </tbody>
           </table>
         </div>
+
+        {Number(p.employee_savings) > 0 && (
+          <div className="mb-3 rounded-md bg-muted/30 p-2 text-[11px] text-muted-foreground">
+            Worker-owned savings deduction reduces net pay but remains owed to the worker.
+          </div>
+        )}
 
         {/* Net pay */}
         <div className="mb-4 rounded-md bg-success/10 border border-success/40 p-3 flex justify-between items-center">

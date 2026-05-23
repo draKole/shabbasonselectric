@@ -50,6 +50,17 @@ export type GlobalSettings = {
   paystub_company_name: string;
   paystub_company_phone: string;
   paystub_company_address: string;
+  // Employee Savings (worker-owned)
+  savings_enabled_default: string;
+  savings_default_type: string;
+  savings_default_pct: string;
+  savings_default_fixed: string;
+  savings_require_auth: string;
+  savings_policy_text: string;
+  savings_destination_note: string;
+  // Vouchers
+  voucher_default_terms: string;
+  voucher_min_schedule_days: string;
 };
 
 export const SETTINGS_DEFAULTS: GlobalSettings = {
@@ -99,6 +110,15 @@ export const SETTINGS_DEFAULTS: GlobalSettings = {
   paystub_company_name: "Shabba & Sons Electric",
   paystub_company_phone: "614-671-8528",
   paystub_company_address: "",
+  savings_enabled_default: "no",
+  savings_default_type: "percent",
+  savings_default_pct: "5",
+  savings_default_fixed: "0",
+  savings_require_auth: "yes",
+  savings_policy_text: "Employee Savings Deduction is voluntary and worker-owned. Amounts deducted from pay remain the worker's money and are tracked as savings owed/held for the worker until released or sent to the chosen destination. This is not retirement, not company profit, and not forfeitable if the worker leaves.",
+  savings_destination_note: "",
+  voucher_default_terms: "Voucher applies to labor only unless otherwise stated. Materials, permits, inspections, emergency calls, and specialty equipment are separate. Customer must schedule at least 7 days in advance. Voucher is not redeemable for cash unless required by law. Voucher may not be combined with other discounts unless approved by Shabba & Sons Electric.",
+  voucher_min_schedule_days: "7",
 };
 
 export function useGlobalSettings() {

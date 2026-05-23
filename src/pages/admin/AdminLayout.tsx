@@ -1,7 +1,7 @@
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, DollarSign, Users, Settings, Receipt, CreditCard, BookUser, HardHat, ClipboardList, BarChart3, Building2, User, FileSpreadsheet, Archive } from "lucide-react";
+import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, DollarSign, Users, Settings, Receipt, CreditCard, BookUser, HardHat, ClipboardList, BarChart3, Building2, User, FileSpreadsheet, Archive, Ticket, PiggyBank } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BUSINESS } from "@/lib/business";
 
@@ -21,6 +21,8 @@ const NAV = [
   { to: "/admin/debt", label: "Debt", icon: CreditCard },
   { to: "/admin/workers", label: "Workers", icon: HardHat },
   { to: "/admin/paystubs", label: "Paystubs", icon: FileSpreadsheet },
+  { to: "/admin/worker-savings", label: "Savings", icon: PiggyBank },
+  { to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { to: "/admin/historical-income", label: "Import Income", icon: Archive },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },

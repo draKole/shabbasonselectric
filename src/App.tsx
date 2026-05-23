@@ -45,6 +45,9 @@ import AdminBusiness from "./pages/admin/AdminBusiness";
 import AdminPersonal from "./pages/admin/AdminPersonal";
 import AdminPaystubs from "./pages/admin/AdminPaystubs";
 import AdminHistoricalIncome from "./pages/admin/AdminHistoricalIncome";
+import AdminVouchers from "./pages/admin/AdminVouchers";
+import AdminWorkerSavings from "./pages/admin/AdminWorkerSavings";
+import ServiceVouchers from "./pages/ServiceVouchers";
 
 const queryClient = new QueryClient();
 
@@ -68,6 +71,8 @@ const App = () => (
               <Route path="/careers" element={<Careers />} />
             </Route>
             <Route path="/estimate/:token" element={<EstimateShare />} />
+            <Route path="/service-vouchers" element={<ServiceVouchers />} />
+            <Route path="/vouchers" element={<ServiceVouchers />} />
             <Route path="/worker/login" element={<WorkerLogin />} />
             <Route path="/worker/dashboard" element={<WorkerDashboard />} />
             <Route path="/admin/auth" element={<AdminAuth />} />
@@ -95,6 +100,8 @@ const App = () => (
               <Route path="reports" element={<AdminReports />} />
               <Route path="paystubs" element={<AdminPaystubs />} />
               <Route path="historical-income" element={<AdminHistoricalIncome />} />
+              <Route path="vouchers" element={<AdminVouchers />} />
+              <Route path="worker-savings" element={<AdminWorkerSavings />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="setup" element={<AdminSetup />} />
             </Route>
