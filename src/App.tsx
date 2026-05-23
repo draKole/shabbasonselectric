@@ -45,6 +45,9 @@ import AdminBusiness from "./pages/admin/AdminBusiness";
 import AdminPersonal from "./pages/admin/AdminPersonal";
 import AdminPaystubs from "./pages/admin/AdminPaystubs";
 import AdminHistoricalIncome from "./pages/admin/AdminHistoricalIncome";
+import AdminVouchers from "./pages/admin/AdminVouchers";
+import AdminWorkerSavings from "./pages/admin/AdminWorkerSavings";
+import ServiceVouchers from "./pages/ServiceVouchers";
 
 const queryClient = new QueryClient();
 
