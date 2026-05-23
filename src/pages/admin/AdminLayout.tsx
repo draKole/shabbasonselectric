@@ -1,7 +1,7 @@
 import { Navigate, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, DollarSign, Users, Settings, Receipt, CreditCard, BookUser, HardHat, ClipboardList, BarChart3, Building2, User, FileSpreadsheet, Archive } from "lucide-react";
+import { Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star, Briefcase, Image, Zap, DollarSign, Users, Settings, Receipt, CreditCard, BookUser, HardHat, ClipboardList, BarChart3, Building2, User, FileSpreadsheet, Archive, Ticket, PiggyBank } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BUSINESS } from "@/lib/business";
 
