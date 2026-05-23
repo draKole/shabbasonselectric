@@ -132,6 +132,7 @@ export default function AdminPaystubs() {
               <Row label="Local WH" v={breakdown.local_wh} neg />
               <Row label="FICA (employee)" v={breakdown.fica_ee} neg />
               {breakdown.retirement > 0 && <Row label="Retirement (planning)" v={breakdown.retirement} neg />}
+              {breakdown.employee_savings > 0 && <Row label="Employee Savings (worker-owned)" v={breakdown.employee_savings} neg />}
               <Row label="Net Pay" v={breakdown.net_pay} bold />
               <Row label="Employer FICA" v={breakdown.fica_er} muted />
               <Row label="Workers Comp" v={breakdown.wc_amt} muted />
