@@ -21,6 +21,8 @@ const NAV = [
   { to: "/admin/debt", label: "Debt", icon: CreditCard },
   { to: "/admin/workers", label: "Workers", icon: HardHat },
   { to: "/admin/paystubs", label: "Paystubs", icon: FileSpreadsheet },
+  { to: "/admin/worker-savings", label: "Savings", icon: PiggyBank },
+  { to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
   { to: "/admin/historical-income", label: "Import Income", icon: Archive },
   { to: "/admin/reviews", label: "Reviews", icon: Star },
   { to: "/admin/portfolio", label: "Portfolio", icon: Image },
