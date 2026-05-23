@@ -59,11 +59,18 @@ export default function AdminPaystubs() {
     hours: totalHours, hourly_rate: rate,
     worker_wc_pct: worker.workers_comp_pct, worker_ins_pct: worker.insurance_pct, worker_ppe_monthly: worker.ppe_monthly,
     period_days: periodDays,
+    savings_enabled: (worker as any).savings_enabled && (worker as any).savings_auth_received,
+    savings_type: (worker as any).savings_type,
+    savings_pct: Number((worker as any).savings_pct || 0),
+    savings_fixed: Number((worker as any).savings_fixed || 0),
   }, settings) : null, [worker, totalHours, rate, periodDays, settings]);
 
   async function generate() {
     if (!worker || !breakdown) return toast.error("Pick a worker");
     if (totalHours <= 0) return toast.error("No approved unpaid hours in this range");
+    if ((worker as any).savings_enabled && !(worker as any).savings_auth_received) {
+      if (!confirm("Worker savings is enabled but authorization is NOT received. Continue WITHOUT savings deduction?")) return;
+    }
     const { data: created, error } = await (supabase as any).from("paystubs").insert({
       worker_id: worker.id, period_start: form.period_start, period_end: form.period_end, pay_date: form.pay_date,
       ...breakdown, notes: form.notes || null, status: "draft",
@@ -72,6 +79,14 @@ export default function AdminPaystubs() {
     // link entries
     await supabase.from("worker_time_entries").update({ paystub_id: created.id, paid: true, paid_at: new Date().toISOString(), status: "paid" } as any)
       .in("id", previewEntries.map(e => e.id));
+    // record savings withholding to ledger
+    if (breakdown.employee_savings > 0) {
+      await (supabase as any).from("worker_savings_ledger").insert({
+        worker_id: worker.id, txn_type: "withheld", amount: breakdown.employee_savings,
+        paystub_id: created.id, entry_date: form.pay_date,
+        notes: `Withheld from paystub ${form.period_start} → ${form.period_end}`,
+      });
+    }
     toast.success("Paystub generated"); load();
   }
 
