@@ -100,6 +100,8 @@ const App = () => (
               <Route path="reports" element={<AdminReports />} />
               <Route path="paystubs" element={<AdminPaystubs />} />
               <Route path="historical-income" element={<AdminHistoricalIncome />} />
+              <Route path="vouchers" element={<AdminVouchers />} />
+              <Route path="worker-savings" element={<AdminWorkerSavings />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="setup" element={<AdminSetup />} />
             </Route>
