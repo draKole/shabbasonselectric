@@ -22,8 +22,6 @@ const GROUPS: { label: string; items: { to: string; label: string; icon: any; en
       { to: "/admin/jobs", label: "Jobs", icon: Briefcase },
       { to: "/admin/calendar", label: "Calendar", icon: Calendar },
       { to: "/admin/contacts", label: "Contacts", icon: BookUser },
-      { to: "/admin/estimates", label: "Estimates", icon: FileText },
-      { to: "/admin/templates", label: "Templates", icon: ClipboardList },
     ],
   },
   {
@@ -50,10 +48,12 @@ const GROUPS: { label: string; items: { to: string; label: string; icon: any; en
   {
     label: "Growth",
     items: [
+      { to: "/admin/estimates", label: "Estimates", icon: FileText },
+      { to: "/admin/templates", label: "Templates", icon: ClipboardList },
+      { to: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
       { to: "/admin/reviews", label: "Reviews", icon: Star },
       { to: "/admin/portfolio", label: "Portfolio", icon: Image },
       { to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
-      { to: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
     ],
   },
   {
@@ -67,8 +67,9 @@ const GROUPS: { label: string; items: { to: string; label: string; icon: any; en
 
 function AdminSidebar() {
   const { pathname } = useLocation();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
+  const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
   const isActive = (to: string, end?: boolean) =>
     end ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
@@ -91,7 +92,7 @@ function AdminSidebar() {
                 {g.items.map((it) => (
                   <SidebarMenuItem key={it.to}>
                     <SidebarMenuButton asChild isActive={isActive(it.to, it.end)} tooltip={it.label}>
-                      <NavLink to={it.to} end={it.end} className="flex items-center gap-2">
+                      <NavLink to={it.to} end={it.end} onClick={closeOnMobile} className="flex items-center gap-2">
                         <it.icon className="h-4 w-4 shrink-0" />
                         <span>{it.label}</span>
                       </NavLink>
@@ -104,7 +105,7 @@ function AdminSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
-        <Link to="/admin/jobs/new">
+        <Link to="/admin/jobs/new" onClick={closeOnMobile}>
           <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90 gap-1">
             <Plus className="h-4 w-4" /> {!collapsed && "Quick Add"}
           </Button>
