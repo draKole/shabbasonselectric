@@ -22,8 +22,6 @@ const GROUPS: { label: string; items: { to: string; label: string; icon: any; en
       { to: "/admin/jobs", label: "Jobs", icon: Briefcase },
       { to: "/admin/calendar", label: "Calendar", icon: Calendar },
       { to: "/admin/contacts", label: "Contacts", icon: BookUser },
-      { to: "/admin/estimates", label: "Estimates", icon: FileText },
-      { to: "/admin/templates", label: "Templates", icon: ClipboardList },
     ],
   },
   {
@@ -50,10 +48,12 @@ const GROUPS: { label: string; items: { to: string; label: string; icon: any; en
   {
     label: "Growth",
     items: [
+      { to: "/admin/estimates", label: "Estimates", icon: FileText },
+      { to: "/admin/templates", label: "Templates", icon: ClipboardList },
+      { to: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
       { to: "/admin/reviews", label: "Reviews", icon: Star },
       { to: "/admin/portfolio", label: "Portfolio", icon: Image },
       { to: "/admin/vouchers", label: "Vouchers", icon: Ticket },
-      { to: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
     ],
   },
   {
