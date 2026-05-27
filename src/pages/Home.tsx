@@ -8,6 +8,71 @@ import { useSeo } from "@/lib/seo";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { JOB_TYPE_LABELS } from "@/lib/jobTypes";
+import { usePublicVoucherOffers } from "@/lib/usePublicVoucherOffers";
+
+function VoucherPromo() {
+  const { best } = usePublicVoucherOffers();
+  return (
+    <section className="bg-muted/40 py-14">
+      <div className="container-tight grid gap-6 lg:grid-cols-[1.2fr,1fr] items-center">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-secondary/10 border border-secondary/30 px-3 py-1 text-xs font-semibold text-secondary">
+            <Ticket className="h-3.5 w-3.5" /> Service Vouchers
+          </div>
+          <h2 className="mt-3 text-3xl md:text-4xl font-extrabold">Save on Future Electrical Work</h2>
+          {best ? (
+            <p className="mt-3 text-muted-foreground text-lg">
+              Pay now, get more labor credit later. Our <strong>{best.name}</strong> turns{" "}
+              <strong>${Number(best.amount_paid).toLocaleString()}</strong> into{" "}
+              <strong>${Number(best.credit_value).toLocaleString()}</strong> in labor credit toward
+              panel work, EV chargers, lighting, outlets, service upgrades, or future projects.
+            </p>
+          ) : (
+            <p className="mt-3 text-muted-foreground text-lg">
+              Ask about service vouchers for future electrical work — a simple way to lock in savings
+              on bigger jobs like panels, EV chargers, and remodels.
+            </p>
+          )}
+          <ul className="mt-4 space-y-1.5 text-sm text-muted-foreground">
+            <li>• Labor credit only (materials, permits, and emergency calls may be separate)</li>
+            <li>• Must schedule at least 1 week ahead — voucher must be approved and active before use</li>
+            <li>• Not cash refundable unless an admin marks it refunded</li>
+            <li>• Good for future electrical work — great for homeowners and landlords planning bigger jobs</li>
+          </ul>
+          <div className="mt-5 flex flex-wrap gap-3">
+            <Link to="/vouchers"><Button className="bg-success text-success-foreground hover:bg-success/90 gap-2"><Ticket className="h-4 w-4" /> View Vouchers</Button></Link>
+            <a href={smsHref()}><Button variant="outline">Ask About a Voucher</Button></a>
+          </div>
+        </div>
+        <Card className="p-6 bg-gradient-to-br from-secondary/10 to-accent/10 border-secondary/30">
+          {best ? (
+            <>
+              <div className="text-sm font-semibold text-secondary uppercase tracking-wide">{best.name}</div>
+              <div className="mt-2 text-4xl font-extrabold">
+                ${Number(best.amount_paid).toLocaleString()}{" "}
+                <span className="text-muted-foreground text-2xl">→</span>{" "}
+                ${Number(best.credit_value).toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">in labor credit</div>
+              {best.terms && <p className="mt-3 text-xs text-muted-foreground">{best.terms}</p>}
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-semibold text-secondary uppercase tracking-wide">Service Vouchers</div>
+              <div className="mt-2 text-xl font-bold">Ask about prepaid labor credit</div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Voucher offers change from time to time. Reach out and we'll share what's currently available.
+              </p>
+            </>
+          )}
+          <Link to="/vouchers" className="mt-4 inline-flex items-center gap-1 text-secondary font-semibold hover:underline">
+            See all voucher offers <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Card>
+      </div>
+    </section>
+  );
+}
 
 const SERVICES = [
   { title: "Electrical Repairs", desc: "Fast diagnosis and repairs for breakers, outlets, and wiring." },
