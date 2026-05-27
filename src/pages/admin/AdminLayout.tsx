@@ -92,7 +92,7 @@ function AdminSidebar() {
                 {g.items.map((it) => (
                   <SidebarMenuItem key={it.to}>
                     <SidebarMenuButton asChild isActive={isActive(it.to, it.end)} tooltip={it.label}>
-                      <NavLink to={it.to} end={it.end} className="flex items-center gap-2">
+                      <NavLink to={it.to} end={it.end} onClick={closeOnMobile} className="flex items-center gap-2">
                         <it.icon className="h-4 w-4 shrink-0" />
                         <span>{it.label}</span>
                       </NavLink>
