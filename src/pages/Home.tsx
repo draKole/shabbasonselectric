@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Phone, MessageSquare, Calendar, ShieldCheck, Award, Wrench, Star, ArrowRight, Bolt } from "lucide-react";
+import { Phone, MessageSquare, Calendar, ShieldCheck, Award, Wrench, Star, ArrowRight, Bolt, Ticket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import heroImg from "@/assets/hero-electrician.jpg";
