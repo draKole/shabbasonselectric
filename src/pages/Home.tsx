@@ -222,7 +222,8 @@ export default function Home() {
       {/* Voucher promo */}
       <VoucherPromo />
 
-      </section>
+
+
 
       {/* Final CTA */}
       <section className="bg-primary text-primary-foreground">
