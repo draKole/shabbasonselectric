@@ -238,7 +238,7 @@ export default function Home() {
             </ul>
             <div className="mt-5 flex flex-wrap gap-3">
               <Link to="/vouchers"><Button className="bg-success text-success-foreground hover:bg-success/90 gap-2"><Ticket className="h-4 w-4" /> View Vouchers</Button></Link>
-              <a href={smsHref("Hi — I'd like to ask about a service voucher.")}><Button variant="outline">Ask About a Voucher</Button></a>
+              <a href={smsHref()}><Button variant="outline">Ask About a Voucher</Button></a>
             </div>
           </div>
           <Card className="p-6 bg-gradient-to-br from-secondary/10 to-accent/10 border-secondary/30">
