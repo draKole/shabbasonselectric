@@ -106,6 +106,23 @@ export default function Services() {
         </Card>
       </div>
 
+      <Card className="mt-10 p-6 bg-gradient-to-br from-secondary/10 to-accent/10 border-secondary/30">
+        <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-secondary uppercase tracking-wide">
+              <Ticket className="h-3.5 w-3.5" /> Save on bigger jobs
+            </div>
+            <h3 className="mt-1 text-xl font-extrabold">Planning a panel upgrade, EV charger, or remodel?</h3>
+            <p className="mt-1 text-sm text-muted-foreground max-w-xl">
+              Service vouchers turn $200 into up to $350+ in labor credit. Lock in savings now, schedule work when you're ready.
+            </p>
+          </div>
+          <Link to="/vouchers">
+            <Button className="bg-success text-success-foreground hover:bg-success/90 gap-2"><Ticket className="h-4 w-4" /> View Service Vouchers</Button>
+          </Link>
+        </div>
+      </Card>
+
       <div className="mt-12 text-center">
         <p className="text-muted-foreground">Have a job in mind?</p>
         <a href={telHref}><Button size="lg" variant="outline">Call {BUSINESS.phone}</Button></a>
