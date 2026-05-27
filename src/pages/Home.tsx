@@ -220,40 +220,8 @@ export default function Home() {
       </section>
 
       {/* Voucher promo */}
-      <section className="bg-muted/40 py-14">
-        <div className="container-tight grid gap-6 lg:grid-cols-[1.2fr,1fr] items-center">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-secondary/10 border border-secondary/30 px-3 py-1 text-xs font-semibold text-secondary">
-              <Ticket className="h-3.5 w-3.5" /> Service Vouchers
-            </div>
-            <h2 className="mt-3 text-3xl md:text-4xl font-extrabold">Save on Future Electrical Work</h2>
-            <p className="mt-3 text-muted-foreground text-lg">
-              Pay now, get more labor credit later. A <strong>$200</strong> voucher can become <strong>$350–$400</strong> in labor credit
-              toward panel work, EV chargers, lighting, outlets, service upgrades, or future projects.
-            </p>
-            <ul className="mt-4 space-y-1.5 text-sm text-muted-foreground">
-              <li>• Labor credit only (materials, permits, and emergency calls may be separate)</li>
-              <li>• Schedule at least 1 week ahead — voucher must be approved before work</li>
-              <li>• Great for homeowners and landlords planning bigger jobs</li>
-            </ul>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link to="/vouchers"><Button className="bg-success text-success-foreground hover:bg-success/90 gap-2"><Ticket className="h-4 w-4" /> View Vouchers</Button></Link>
-              <a href={smsHref()}><Button variant="outline">Ask About a Voucher</Button></a>
-            </div>
-          </div>
-          <Card className="p-6 bg-gradient-to-br from-secondary/10 to-accent/10 border-secondary/30">
-            <div className="text-sm font-semibold text-secondary uppercase tracking-wide">Example Offer</div>
-            <div className="mt-2 text-4xl font-extrabold">$200 <span className="text-muted-foreground text-2xl">→</span> $350</div>
-            <div className="text-sm text-muted-foreground mt-1">in labor credit</div>
-            <div className="mt-4 text-sm">
-              Lock in today's pricing on bigger electrical plans. Use the credit when you're ready to schedule —
-              ideal for panel upgrades, EV chargers, and remodel wiring.
-            </div>
-            <Link to="/vouchers" className="mt-4 inline-flex items-center gap-1 text-secondary font-semibold hover:underline">
-              See all voucher offers <ArrowRight className="h-4 w-4" />
-            </Link>
-          </Card>
-        </div>
+      <VoucherPromo />
+
       </section>
 
       {/* Final CTA */}
