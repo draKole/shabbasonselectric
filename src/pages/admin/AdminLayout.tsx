@@ -67,8 +67,9 @@ const GROUPS: { label: string; items: { to: string; label: string; icon: any; en
 
 function AdminSidebar() {
   const { pathname } = useLocation();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
+  const closeOnMobile = () => { if (isMobile) setOpenMobile(false); };
   const isActive = (to: string, end?: boolean) =>
     end ? pathname === to : pathname === to || pathname.startsWith(to + "/");
 
