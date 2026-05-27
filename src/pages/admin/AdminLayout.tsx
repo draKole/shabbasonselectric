@@ -105,7 +105,7 @@ function AdminSidebar() {
         ))}
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
-        <Link to="/admin/jobs/new">
+        <Link to="/admin/jobs/new" onClick={closeOnMobile}>
           <Button size="sm" className="w-full bg-success text-success-foreground hover:bg-success/90 gap-1">
             <Plus className="h-4 w-4" /> {!collapsed && "Quick Add"}
           </Button>
