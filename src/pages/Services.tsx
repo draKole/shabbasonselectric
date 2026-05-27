@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useSeo } from "@/lib/seo";
 import { BUSINESS, telHref } from "@/lib/business";
-import { ArrowRight, ShieldAlert } from "lucide-react";
+import { ArrowRight, ShieldAlert, Ticket } from "lucide-react";
 
 const SECTIONS = [
   {
