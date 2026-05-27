@@ -204,6 +204,20 @@ export default function Schedule() {
         </p>
       </div>
 
+      <Card className="mt-6 p-4 max-w-3xl bg-secondary/5 border-secondary/30">
+        <div className="flex items-start gap-3 text-sm">
+          <div className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-secondary/15 text-secondary">🎟️</div>
+          <div className="flex-1">
+            <div className="font-semibold">Planning a bigger job? Ask about service vouchers.</div>
+            <p className="text-muted-foreground mt-0.5">
+              Pay now, get more labor credit later — great for panels, EV chargers, lighting upgrades, and remodels.
+            </p>
+          </div>
+          <a href="/vouchers" className="text-secondary font-semibold whitespace-nowrap hover:underline">View vouchers →</a>
+        </div>
+      </Card>
+
+
       <form onSubmit={form.handleSubmit(onSubmit)} className="mt-8 grid gap-8 max-w-3xl">
         {/* Customer info */}
         <Card className="p-5">
