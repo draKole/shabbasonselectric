@@ -48,6 +48,7 @@ import AdminHistoricalIncome from "./pages/admin/AdminHistoricalIncome";
 import AdminVouchers from "./pages/admin/AdminVouchers";
 import AdminWorkerSavings from "./pages/admin/AdminWorkerSavings";
 import ServiceVouchers from "./pages/ServiceVouchers";
+import AdminLeadAlerts from "./pages/admin/AdminLeadAlerts";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="vouchers" element={<AdminVouchers />} />
               <Route path="worker-savings" element={<AdminWorkerSavings />} />
               <Route path="settings" element={<AdminSettings />} />
+              <Route path="lead-alerts" element={<AdminLeadAlerts />} />
               <Route path="setup" element={<AdminSetup />} />
             </Route>
             <Route path="*" element={<NotFound />} />
