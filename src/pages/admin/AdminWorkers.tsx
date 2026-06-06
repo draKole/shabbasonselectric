@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList, KeyRound, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkerDocuments, WORKER_DOC_KEYS, seedWorkerDocs } from "@/lib/useWorkerDocuments";
+import { usePeriodFilter, inRange } from "@/lib/usePeriodFilter";
 
 export default function AdminWorkers() {
   const [workers, setWorkers] = useState<any[]>([]);
@@ -55,6 +56,13 @@ export default function AdminWorkers() {
     return Math.round((done / WORKER_DOC_KEYS.length) * 100);
   }
 
+  const period = usePeriodFilter("workers_period", "this_month");
+
+  function hoursInPeriod(id: string) {
+    return time
+      .filter((t) => t.worker_id === id && inRange(t.work_date, period.from, period.to))
+      .reduce((s, t) => s + Number(t.hours || 0), 0);
+  }
   function hoursThisWeek(id: string) {
     const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString().slice(0, 10);
     return time.filter((t) => t.worker_id === id && t.work_date >= weekAgo).reduce((s, t) => s + Number(t.hours || 0), 0);
@@ -155,6 +163,15 @@ export default function AdminWorkers() {
   }
 
   function balanceFor(id: string) {
+    const earned = time
+      .filter((t) => t.worker_id === id && inRange(t.work_date, period.from, period.to))
+      .reduce((s, t) => s + Number(t.amount || 0), 0);
+    const paid = pays
+      .filter((p) => p.worker_id === id && inRange(p.paid_on, period.from, period.to))
+      .reduce((s, p) => s + Number(p.amount || 0), 0);
+    return { earned, paid, balance: earned - paid };
+  }
+  function balanceAllTime(id: string) {
     const earned = time.filter((t) => t.worker_id === id).reduce((s, t) => s + Number(t.amount || 0), 0);
     const paid = pays.filter((p) => p.worker_id === id).reduce((s, p) => s + Number(p.amount || 0), 0);
     return { earned, paid, balance: earned - paid };
@@ -191,11 +208,18 @@ export default function AdminWorkers() {
     <div className="container-tight py-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-2xl font-extrabold">Workers & Payroll</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center flex-wrap">
+          <Select value={period.range} onValueChange={(v: any) => period.setRange(v)}>
+            <SelectTrigger className="w-36 h-9"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {period.allRanges.map((r) => <SelectItem key={r} value={r}>{period.rangeLabel(r)}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Button size="sm" variant="outline" onClick={() => setShowInactive((v) => !v)}>{showInactive ? "Hide inactive" : "Show inactive"}</Button>
           <Button onClick={openNew} size="sm" className="gap-1"><Plus className="h-4 w-4" />Add Worker</Button>
         </div>
       </div>
+      <div className="text-xs text-muted-foreground -mt-2">Showing <b>{period.label}</b>. Switch to YTD or All Time for historical totals.</div>
 
       <Card className="p-3 flex flex-wrap gap-2 items-end">
         <div className="flex-1 min-w-[160px]">
@@ -310,12 +334,12 @@ export default function AdminWorkers() {
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-2 mt-2 text-xs">
-                <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Hours/wk</div><div className="font-bold text-base">{hoursThisWeek(wk.id).toFixed(1)}</div></div>
+                <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Hours · {period.label}</div><div className="font-bold text-base">{hoursInPeriod(wk.id).toFixed(1)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Earned</div><div className="font-bold text-base">${b.earned.toFixed(0)}</div></div>
                 <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Paid out</div><div className="font-bold text-base">${b.paid.toFixed(0)}</div></div>
-                <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Owe worker</div><div className={`font-bold text-base ${b.balance > 0 ? "text-destructive" : "text-success"}`}>${b.balance.toFixed(0)}</div></div>
+                <div className="rounded bg-muted/50 p-2"><div className="text-muted-foreground">Owe · {period.label}</div><div className={`font-bold text-base ${b.balance > 0 ? "text-destructive" : "text-success"}`}>${b.balance.toFixed(0)}</div></div>
               </div>
-              <div className="text-[10px] text-muted-foreground mt-1">Total Cost to Business ≈ ${trueRate.toFixed(0)}/hr (includes Extra Worker Cost)</div>
+              <div className="text-[10px] text-muted-foreground mt-1">All-time owed: ${balanceAllTime(wk.id).balance.toFixed(0)} · True cost ≈ ${trueRate.toFixed(0)}/hr</div>
               <div className="mt-2">
                 <div className="h-1.5 rounded bg-muted overflow-hidden">
                   <div className="h-full bg-success" style={{ width: `${onboardPct(wk.id)}%` }} />
@@ -559,25 +583,50 @@ function TimeReviewSection({ time, workers, jobs, reload }: { time: any[]; worke
 
 function WorkerLoginButton({ worker, onDone }: { worker: any; onDone: () => void }) {
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<{ email: string; password: string; login_url: string } | null>(null);
-  const status = worker.auth_user_id ? "Active" : (worker.invite_status === "sent" ? "Invited" : "Not invited");
+  const [result, setResult] = useState<{ email: string; password: string; portal_url: string; mode: string; message?: string } | null>(null);
+  const status = worker.auth_user_id ? "Active" : (worker.invite_status === "invited" || worker.invite_status === "sent" ? "Invited" : "Not invited");
 
   async function invite() {
-    if (!worker.email) { toast.error("Add an email for this worker first"); return; }
+    if (!worker.email && !worker.phone) {
+      toast.error("Worker needs an email or phone before invite can be created.");
+      return;
+    }
+    if (!worker.email) {
+      toast.error("Worker needs an email to receive login credentials. Add an email first.");
+      return;
+    }
     const verb = worker.auth_user_id ? "Reset password for" : "Create login for";
     if (!confirm(`${verb} ${worker.full_name}? A new temporary password will be generated.`)) return;
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("worker-invite", { body: { worker_id: worker.id } });
-      if (error) throw error;
+      // Parse FunctionsHttpError body if present
+      if (error) {
+        let detail = error.message || "Edge function error";
+        try {
+          const ctx: any = (error as any).context;
+          if (ctx?.response) {
+            const j = await ctx.response.json();
+            detail = j?.error || j?.detail || detail;
+          }
+        } catch {}
+        throw new Error(detail);
+      }
       if ((data as any)?.error) throw new Error((data as any).error);
       setResult(data as any);
+      toast.success((data as any)?.message || "Done");
       onDone();
     } catch (e: any) {
-      toast.error(e.message || "Failed");
+      console.error("worker-invite failed:", e);
+      toast.error(e.message || "Failed to create login");
     } finally { setBusy(false); }
   }
   function copy(v: string) { navigator.clipboard.writeText(v); toast.success("Copied"); }
+  function copyAll() {
+    if (!result) return;
+    navigator.clipboard.writeText(`Worker Portal: ${result.portal_url}\nEmail: ${result.email}\nTemporary password: ${result.password}\n\nLog in and change your password when prompted.`);
+    toast.success("All login info copied");
+  }
 
   return (
     <>
@@ -586,14 +635,15 @@ function WorkerLoginButton({ worker, onDone }: { worker: any; onDone: () => void
       </Button>
       <Dialog open={!!result} onOpenChange={(o) => !o && setResult(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Worker Login Created</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{result?.mode === "reset" ? "Password Reset" : "Worker Login Created"}</DialogTitle></DialogHeader>
           {result && (
             <div className="space-y-2 text-sm">
               <p className="text-xs text-muted-foreground">Share these securely with {worker.full_name}. Password is temporary.</p>
-              <div className="flex items-center gap-2"><b className="w-20">URL:</b><span className="flex-1 truncate">{result.login_url}</span><Button size="sm" variant="ghost" onClick={() => copy(result.login_url)}><Copy className="h-3.5 w-3.5" /></Button></div>
-              <div className="flex items-center gap-2"><b className="w-20">Email:</b><span className="flex-1 truncate">{result.email}</span><Button size="sm" variant="ghost" onClick={() => copy(result.email)}><Copy className="h-3.5 w-3.5" /></Button></div>
-              <div className="flex items-center gap-2"><b className="w-20">Password:</b><code className="flex-1 truncate bg-muted px-2 py-1 rounded">{result.password}</code><Button size="sm" variant="ghost" onClick={() => copy(result.password)}><Copy className="h-3.5 w-3.5" /></Button></div>
-              <div className="text-[11px] text-muted-foreground">Status: {status}. Worker only sees their own profile, time, paystubs, and documents.</div>
+              <div className="flex items-center gap-2"><b className="w-24">Portal:</b><span className="flex-1 truncate">{result.portal_url}</span><Button size="sm" variant="ghost" onClick={() => copy(result.portal_url)}><Copy className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-2"><b className="w-24">Email:</b><span className="flex-1 truncate">{result.email}</span><Button size="sm" variant="ghost" onClick={() => copy(result.email)}><Copy className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-2"><b className="w-24">Password:</b><code className="flex-1 truncate bg-muted px-2 py-1 rounded">{result.password}</code><Button size="sm" variant="ghost" onClick={() => copy(result.password)}><Copy className="h-3.5 w-3.5" /></Button></div>
+              <Button onClick={copyAll} variant="outline" size="sm" className="w-full gap-1"><Copy className="h-3.5 w-3.5" />Copy all login info</Button>
+              <div className="text-[11px] text-muted-foreground">Status will show as Invited until the worker signs in. Worker portal only shows their own data.</div>
             </div>
           )}
         </DialogContent>
