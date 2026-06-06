@@ -162,6 +162,18 @@ export default function Schedule() {
         });
       }
 
+      // Fire-and-forget SMS lead alert
+      try {
+        const { sendLeadAlert } = await import("@/lib/useLeadAlertSettings");
+        sendLeadAlert({
+          lead_type: "service_request",
+          name: values.name,
+          phone: values.phone,
+          service: values.job_type,
+          address_city: [values.address, values.city].filter(Boolean).join(", "),
+        });
+      } catch {}
+
       setDone(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (e: any) {
