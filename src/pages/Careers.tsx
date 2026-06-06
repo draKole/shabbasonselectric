@@ -55,6 +55,10 @@ export default function Careers() {
     });
     setBusy(false);
     if (error) return toast.error(error.message);
+    try {
+      const { sendLeadAlert } = await import("@/lib/useLeadAlertSettings");
+      sendLeadAlert({ lead_type: "application", name: v.full_name, phone: v.phone, service: "Job application" });
+    } catch {}
     setDone(true);
   }
 

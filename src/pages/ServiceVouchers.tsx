@@ -33,6 +33,10 @@ export default function ServiceVouchers() {
       offer_id: picked, notes: form.notes || null, status: "new",
     });
     if (error) return toast.error(error.message);
+    try {
+      const { sendLeadAlert } = await import("@/lib/useLeadAlertSettings");
+      sendLeadAlert({ lead_type: "voucher_request", name: form.customer_name, phone: form.phone, service: "Voucher request" });
+    } catch {}
     setSubmitted(true);
     toast.success("Request submitted — we'll be in touch");
   }
