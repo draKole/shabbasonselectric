@@ -187,6 +187,7 @@ export default function AdminBills() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -214,16 +215,19 @@ export default function AdminBills() {
         </div>
         <div className="space-y-2">
           {bills.filter((b) => {
+            const paidNow = isPaidThisMonth(b);
             if (filter === "all") return true;
             if (filter === "business" || filter === "personal") return b.bill_type === filter;
-            if (filter === "paid") return b.paid;
-            if (filter === "unpaid") return !b.paid;
-            if (filter === "past_due") return !b.paid && b.due_date && new Date(b.due_date) < now;
+            if (filter === "paid") return paidNow;
+            if (filter === "unpaid") return !paidNow;
+            if (filter === "past_due") return !paidNow && b.due_date && new Date(b.due_date) < now;
             return true;
           }).map((b) => {
-            const overdue = !b.paid && b.due_date && new Date(b.due_date) < now;
+            const paidNow = isPaidThisMonth(b);
+            const overdue = !paidNow && b.due_date && new Date(b.due_date) < now;
+            const occ = b.recurring ? currentOcc(b.id) : null;
             return (
-              <div key={b.id} className={`flex flex-wrap items-center justify-between gap-2 p-3 rounded-md border ${b.paid ? "border-success/30 bg-success/5" : overdue ? "border-destructive/40 bg-destructive/5" : "border-border"}`}>
+              <div key={b.id} className={`flex flex-wrap items-center justify-between gap-2 p-3 rounded-md border ${paidNow ? "border-success/30 bg-success/5" : overdue ? "border-destructive/40 bg-destructive/5" : "border-border"}`}>
                 <div className="min-w-0">
                   <div className="font-semibold flex items-center gap-2">
                     {b.name}
@@ -232,11 +236,15 @@ export default function AdminBills() {
                     {b.priority === "critical" && <span className="text-xs px-1.5 py-0.5 rounded bg-destructive text-destructive-foreground">critical</span>}
                     {b.recurring && <span className="text-xs px-1.5 py-0.5 rounded bg-secondary/20 text-secondary">{b.recurring_frequency}</span>}
                   </div>
-                  <div className="text-xs text-muted-foreground">{fmt(Number(b.amount))} {b.due_date && `· due ${b.due_date}`} {b.paid && b.paid_on && `· paid ${b.paid_on}`}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {fmt(Number(b.amount))} {b.due_date && `· due ${b.due_date}`}
+                    {b.recurring && occ?.paid && ` · paid this month ${occ.paid_on}`}
+                    {!b.recurring && b.paid && b.paid_on && ` · paid ${b.paid_on}`}
+                  </div>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant={b.paid ? "outline" : "default"} onClick={() => togglePaid(b)} className={b.paid ? "" : "bg-success text-success-foreground hover:bg-success/90"}>
-                    <Check className="h-3.5 w-3.5" /> {b.paid ? "Unmark" : "Mark Paid"}
+                  <Button size="sm" variant={paidNow ? "outline" : "default"} onClick={() => togglePaid(b)} className={paidNow ? "" : "bg-success text-success-foreground hover:bg-success/90"}>
+                    <Check className="h-3.5 w-3.5" /> {paidNow ? "Unmark" : "Mark Paid"}
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => { setEditing(b); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="outline" onClick={() => del(b.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
