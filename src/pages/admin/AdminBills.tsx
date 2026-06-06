@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Check, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Check, AlertTriangle, RefreshCw } from "lucide-react";
+import { ensureMonthlyOccurrences, monthKey } from "@/lib/useBillOccurrences";
 
 type Bill = {
   id: string;
@@ -39,15 +40,42 @@ function fmt(n: number) {
 
 export default function AdminBills() {
   const [bills, setBills] = useState<Bill[]>([]);
+  const [occurrences, setOccurrences] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<Bill>>(empty);
   const [filter, setFilter] = useState<"all" | "business" | "personal" | "paid" | "unpaid" | "past_due">("all");
+  const currentMonth = monthKey();
 
   async function load() {
-    const { data } = await supabase.from("bills").select("*").order("due_date", { ascending: true, nullsFirst: false });
-    setBills((data as any) || []);
+    const [b, o] = await Promise.all([
+      supabase.from("bills").select("*").order("due_date", { ascending: true, nullsFirst: false }),
+      (supabase as any).from("bill_occurrences").select("*"),
+    ]);
+    setBills((b.data as any) || []);
+    setOccurrences((o.data as any) || []);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    ensureMonthlyOccurrences().finally(load);
+  }, []);
+
+  function currentOcc(billId: string) {
+    return occurrences.find((o) => o.bill_id === billId && o.period_month === currentMonth);
+  }
+  function isPaidThisMonth(b: Bill) {
+    if (b.recurring) {
+      const occ = currentOcc(b.id);
+      return !!occ?.paid;
+    }
+    return b.paid;
+  }
+  async function regenerateOccurrences() {
+    try {
+      await supabase.functions.invoke("generate-bill-occurrences", { body: {} });
+      try { localStorage.removeItem("bill_occ_lastgen"); } catch {}
+      toast.success("Refreshed monthly bills");
+      load();
+    } catch (e: any) { toast.error(e?.message || "Failed"); }
+  }
 
   async function save() {
     if (!editing.name) return toast.error("Name required");
@@ -106,9 +134,11 @@ export default function AdminBills() {
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-extrabold">Bills</h1>
-          <p className="text-sm text-muted-foreground">Track everything you owe so nothing slips.</p>
+          <p className="text-sm text-muted-foreground">Track everything you owe. Recurring bills reset to unpaid each new month.</p>
         </div>
-        <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(empty); }}>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={regenerateOccurrences} className="gap-1"><RefreshCw className="h-3.5 w-3.5" />Refresh month</Button>
+          <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) setEditing(empty); }}>
           <DialogTrigger asChild><Button className="gap-1"><Plus className="h-4 w-4" /> Add Bill</Button></DialogTrigger>
           <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{editing.id ? "Edit Bill" : "New Bill"}</DialogTitle></DialogHeader>
