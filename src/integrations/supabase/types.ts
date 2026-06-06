@@ -44,6 +44,57 @@ export type Database = {
         }
         Relationships: []
       }
+      allocations: {
+        Row: {
+          created_at: string
+          direct_costs: number
+          gross_amount: number
+          id: string
+          net_amount: number
+          notes: string | null
+          overhead_amount: number
+          owner_pay_amount: number
+          period_week: string
+          reserve_amount: number
+          source_id: string | null
+          source_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          direct_costs?: number
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          overhead_amount?: number
+          owner_pay_amount?: number
+          period_week: string
+          reserve_amount?: number
+          source_id?: string | null
+          source_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          direct_costs?: number
+          gross_amount?: number
+          id?: string
+          net_amount?: number
+          notes?: string | null
+          overhead_amount?: number
+          owner_pay_amount?: number
+          period_week?: string
+          reserve_amount?: number
+          source_id?: string | null
+          source_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           key: string
@@ -61,6 +112,56 @@ export type Database = {
           value?: string | null
         }
         Relationships: []
+      }
+      bill_occurrences: {
+        Row: {
+          amount: number
+          bill_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid: boolean
+          paid_amount: number
+          paid_on: string | null
+          period_month: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          bill_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid?: boolean
+          paid_amount?: number
+          paid_on?: string | null
+          period_month: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          bill_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid?: boolean
+          paid_amount?: number
+          paid_on?: string | null
+          period_month?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_occurrences_bill_id_fkey"
+            columns: ["bill_id"]
+            isOneToOne: false
+            referencedRelation: "bills"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bills: {
         Row: {
@@ -785,6 +886,7 @@ export type Database = {
           preferred_date: string | null
           preferred_time_window: string | null
           priority: number | null
+          property_id: string | null
           review_requested: boolean
           review_requested_at: string | null
           scheduled_end: string | null
@@ -848,6 +950,7 @@ export type Database = {
           preferred_date?: string | null
           preferred_time_window?: string | null
           priority?: number | null
+          property_id?: string | null
           review_requested?: boolean
           review_requested_at?: string | null
           scheduled_end?: string | null
@@ -911,6 +1014,7 @@ export type Database = {
           preferred_date?: string | null
           preferred_time_window?: string | null
           priority?: number | null
+          property_id?: string | null
           review_requested?: boolean
           review_requested_at?: string | null
           scheduled_end?: string | null
@@ -930,6 +1034,136 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_alert_log: {
+        Row: {
+          error: string | null
+          id: string
+          lead_type: string
+          ok: boolean
+          payload: Json | null
+          sent_at: string
+        }
+        Insert: {
+          error?: string | null
+          id?: string
+          lead_type: string
+          ok?: boolean
+          payload?: Json | null
+          sent_at?: string
+        }
+        Update: {
+          error?: string | null
+          id?: string
+          lead_type?: string
+          ok?: boolean
+          payload?: Json | null
+          sent_at?: string
+        }
+        Relationships: []
+      }
+      lead_notification_settings: {
+        Row: {
+          alert_email: string | null
+          alert_phone: string | null
+          created_at: string
+          from_number: string | null
+          id: string
+          notify_application: boolean
+          notify_contact_form: boolean
+          notify_estimate_request: boolean
+          notify_service_request: boolean
+          notify_voucher_request: boolean
+          singleton: boolean
+          sms_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          alert_email?: string | null
+          alert_phone?: string | null
+          created_at?: string
+          from_number?: string | null
+          id?: string
+          notify_application?: boolean
+          notify_contact_form?: boolean
+          notify_estimate_request?: boolean
+          notify_service_request?: boolean
+          notify_voucher_request?: boolean
+          singleton?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          alert_email?: string | null
+          alert_phone?: string | null
+          created_at?: string
+          from_number?: string | null
+          id?: string
+          notify_application?: boolean
+          notify_contact_form?: boolean
+          notify_estimate_request?: boolean
+          notify_service_request?: boolean
+          notify_voucher_request?: boolean
+          singleton?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      owner_pay_transfers: {
+        Row: {
+          allocation_id: string | null
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          status: string
+          transferred_on: string
+          updated_at: string
+        }
+        Insert: {
+          allocation_id?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          transferred_on?: string
+          updated_at?: string
+        }
+        Update: {
+          allocation_id?: string | null
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          status?: string
+          transferred_on?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "owner_pay_transfers_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "allocations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "owner_pay_transfers_allocation_id_fkey"
+            columns: ["allocation_id"]
+            isOneToOne: false
+            referencedRelation: "v_allocation_available"
             referencedColumns: ["id"]
           },
         ]
@@ -1020,6 +1254,50 @@ export type Database = {
           worker_id?: string
         }
         Relationships: []
+      }
+      personal_assignments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          notes: string | null
+          source_transfer_id: string | null
+          status: string
+          target_id: string | null
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_transfer_id?: string | null
+          status?: string
+          target_id?: string | null
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_transfer_id?: string | null
+          status?: string
+          target_id?: string | null
+          target_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "personal_assignments_source_transfer_id_fkey"
+            columns: ["source_transfer_id"]
+            isOneToOne: false
+            referencedRelation: "owner_pay_transfers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       personal_expenses: {
         Row: {
@@ -1140,6 +1418,65 @@ export type Database = {
             columns: ["review_id"]
             isOneToOne: false
             referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      properties: {
+        Row: {
+          address: string | null
+          city: string | null
+          created_at: string
+          customer_id: string
+          id: string
+          is_primary: boolean
+          nickname: string | null
+          notes: string | null
+          owner_name: string | null
+          owner_phone: string | null
+          property_type: string
+          state: string | null
+          updated_at: string
+          zip: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_id: string
+          id?: string
+          is_primary?: boolean
+          nickname?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          property_type?: string
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          created_at?: string
+          customer_id?: string
+          id?: string
+          is_primary?: boolean
+          nickname?: string | null
+          notes?: string | null
+          owner_name?: string | null
+          owner_phone?: string | null
+          property_type?: string
+          state?: string | null
+          updated_at?: string
+          zip?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
@@ -1736,7 +2073,57 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_allocation_available: {
+        Row: {
+          created_at: string | null
+          direct_costs: number | null
+          gross_amount: number | null
+          id: string | null
+          net_amount: number | null
+          notes: string | null
+          overhead_amount: number | null
+          owner_pay_amount: number | null
+          period_week: string | null
+          reserve_amount: number | null
+          source_id: string | null
+          source_type: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          direct_costs?: number | null
+          gross_amount?: number | null
+          id?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          overhead_amount?: number | null
+          owner_pay_amount?: number | null
+          period_week?: string | null
+          reserve_amount?: number | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          direct_costs?: number | null
+          gross_amount?: number | null
+          id?: string | null
+          net_amount?: number | null
+          notes?: string | null
+          overhead_amount?: number | null
+          owner_pay_amount?: number | null
+          period_week?: string | null
+          reserve_amount?: number | null
+          source_id?: string | null
+          source_type?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       claim_first_admin: { Args: never; Returns: boolean }
