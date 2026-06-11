@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DollarSign, TrendingUp, Receipt, Info, Users, ChevronDown, CreditCard } from "lucide-react";
 import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
+import { useLiveCash, fmtMoney } from "@/lib/useLiveCash";
 import { useMonthMoney, monthRange, yearRange } from "@/lib/useMonthMoney";
 import { useBillsTotals, useDebtTotals } from "@/lib/useBillsTotals";
 import { useGlobalSettings, num } from "@/lib/useGlobalSettings";
