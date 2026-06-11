@@ -88,8 +88,17 @@ Deno.serve(async (req) => {
     findings.push({ severity: pendingOwner > 0 && Number(bizCash?.live_cash || 0) <= 0 ? "error" : "info", code: "pending_owner_pay_no_cash", title: "Pending owner pay exists but business live cash is $0", count: pendingOwner > 0 && Number(bizCash?.live_cash || 0) <= 0 ? 1 : 0 });
 
     // 10. Bill occurrence correctness
-    const { data: dupOcc } = await admin.rpc("fix_bill_occurrences", {});
-    findings.push({ severity: "info", code: "bill_occurrence_refresh", title: "Bill occurrence refresh available", count: Number((dupOcc as any)?.created || 0) + Number((dupOcc as any)?.fixed || 0), detail: `Created ${(dupOcc as any)?.created || 0}, fixed ${(dupOcc as any)?.fixed || 0}, already existed ${(dupOcc as any)?.already_existed || 0}` });
+    const { data: dupOcc } = await admin
+      .from("bill_occurrences")
+      .select("bill_id, period_month");
+    const duplicateKeys = new Set<string>();
+    const seenKeys = new Set<string>();
+    (dupOcc || []).forEach((o: any) => {
+      const key = `${o.bill_id}:${o.period_month}`;
+      if (seenKeys.has(key)) duplicateKeys.add(key);
+      seenKeys.add(key);
+    });
+    findings.push({ severity: duplicateKeys.size ? "warn" : "info", code: "duplicate_bill_occurrences", title: "Duplicate bill occurrences", count: duplicateKeys.size });
     const { data: badPaidOcc } = await admin.from("bill_occurrences").select("id").eq("paid", true).or("paid_on.is.null,paid_from.is.null,payment_method.is.null");
     findings.push({ severity: badPaidOcc?.length ? "warn" : "info", code: "bill_paid_missing_cash_fields", title: "Bill paid but missing cash source/payment details", count: badPaidOcc?.length || 0 });
 
