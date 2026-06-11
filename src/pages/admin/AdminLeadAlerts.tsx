@@ -16,6 +16,14 @@ export default function AdminLeadAlerts() {
   const [form, setForm] = useState<any>(null);
   const [logs, setLogs] = useState<any[]>([]);
   const [sending, setSending] = useState(false);
+  const [diag, setDiag] = useState<any>(null);
+
+  async function loadDiag() {
+    try {
+      const { data } = await supabase.functions.invoke("lead-alert", { body: { diagnostics: true } });
+      setDiag(data);
+    } catch (e: any) { setDiag({ error: e?.message }); }
+  }
 
   useEffect(() => { if (settings) setForm(settings); }, [settings]);
   useEffect(() => {
