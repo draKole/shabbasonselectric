@@ -50,9 +50,17 @@ export const SiteFooter = () => {
         </div>
       </div>
       <div className="border-t border-primary-foreground/15">
-        <div className="container-tight py-4 text-xs opacity-70 flex flex-col sm:flex-row justify-between gap-2">
-          <span>© {new Date().getFullYear()} {BUSINESS.name}. All rights reserved.</span>
-          <span>Serving {BUSINESS.serviceArea}.</span>
+        <div className="container-tight py-4 text-xs opacity-70 flex flex-col gap-2">
+          <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link to="/privacy-policy" className="hover:text-secondary">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-secondary">Terms</Link>
+            <Link to="/service-policy" className="hover:text-secondary">Service Policy</Link>
+            <Link to="/voucher-terms" className="hover:text-secondary">Voucher Terms</Link>
+          </div>
+          <div className="flex flex-col sm:flex-row justify-between gap-2">
+            <span>© {new Date().getFullYear()} {BUSINESS.name}. All rights reserved.</span>
+            <span>Serving {BUSINESS.serviceArea}.</span>
+          </div>
         </div>
       </div>
     </footer>
