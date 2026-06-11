@@ -3,6 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type BusinessCash = {
   live_cash: number;
+  is_reconciled: boolean;
+  reconciliation_date: string | null;
+  reconciled_balance: number;
   payments_in: number;
   voucher_cash_in: number;
   historical_in: number;
@@ -17,7 +20,11 @@ export type BusinessCash = {
 };
 export type PersonalCash = {
   live_cash: number;
+  is_reconciled: boolean;
+  reconciliation_date: string | null;
+  reconciled_balance: number;
   transfers_in: number;
+  owner_worker_pay_in: number;
   personal_income_in: number;
   personal_exp_out: number;
   bills_out: number;
@@ -58,10 +65,17 @@ export function useLiveCash() {
       assigned: bizAssigned,
       voucher_liability: vLiab,
       unassigned: Math.max(0, Number(bizRow.live_cash || 0) - bizAssigned),
+      is_reconciled: !!bizRow.is_reconciled,
+      reconciliation_date: bizRow.reconciliation_date || null,
+      reconciled_balance: Number(bizRow.reconciled_balance || 0),
     });
     setPer({
       live_cash: Number(perRow.live_cash || 0),
+      is_reconciled: !!perRow.is_reconciled,
+      reconciliation_date: perRow.reconciliation_date || null,
+      reconciled_balance: Number(perRow.reconciled_balance || 0),
       transfers_in: Number(perRow.transfers_in || 0),
+      owner_worker_pay_in: Number(perRow.owner_worker_pay_in || 0),
       personal_income_in: Number(perRow.personal_income_in || 0),
       personal_exp_out: Number(perRow.personal_exp_out || 0),
       bills_out: Number(perRow.bills_out || 0),
