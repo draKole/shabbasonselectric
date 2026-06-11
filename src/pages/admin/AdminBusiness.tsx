@@ -49,7 +49,7 @@ export default function AdminBusiness() {
       {/* LIVE CASH SECTION */}
       <section className="space-y-2">
         <h2 className="font-bold text-sm uppercase text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4" /> Live Cash</h2>
-        <ReconciliationWarning show={live.biz && !live.biz.is_reconciled} />
+        <ReconciliationWarning show={!!live.biz && !live.biz.is_reconciled} />
         {!live.biz ? <Card className="p-4 text-sm text-muted-foreground">Loading…</Card> : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat icon={<Wallet className="h-5 w-5" />} label="Business Live Cash" value={fmt(live.biz.live_cash)} sub="Cash currently in business" highlight />
