@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { DollarSign, TrendingUp, Receipt, Info, Users, ChevronDown, CreditCard } from "lucide-react";
 import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
+import { useLiveCash, fmtMoney } from "@/lib/useLiveCash";
 import { useMonthMoney, monthRange, yearRange } from "@/lib/useMonthMoney";
 import { useBillsTotals, useDebtTotals } from "@/lib/useBillsTotals";
 import { useGlobalSettings, num } from "@/lib/useGlobalSettings";
@@ -20,6 +21,7 @@ export default function AdminMoney() {
   const [month, setMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
   const { presets: bizPresets, active: bizActive } = useAllocationPresets("business");
   const { presets: personalPresets, active: personalActive } = useAllocationPresets("personal");
+  const { biz: liveBiz, per: livePer, loading: liveLoading } = useLiveCash();
 
   useEffect(() => {
     supabase.from("job_payments").select("id, amount, paid_on, method, is_deposit")
@@ -74,6 +76,26 @@ export default function AdminMoney() {
           </Select>
         </div>
       </div>
+
+      {/* Live Cash Overview */}
+      <Card className="p-5 space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-bold flex items-center gap-2"><DollarSign className="h-4 w-4 text-success" /> Live Cash Overview</h2>
+          {liveLoading && <span className="text-xs text-muted-foreground">Loading…</span>}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat icon={<DollarSign className="h-5 w-5" />} label="Business Live Cash" value={fmtMoney(liveBiz?.live_cash || 0)} sub="In account" highlight />
+          <Stat icon={<DollarSign className="h-5 w-5" />} label="Personal Live Cash" value={fmtMoney(livePer?.live_cash || 0)} sub="In account" highlight />
+          <Stat icon={<Info className="h-5 w-5" />} label="Business Assigned" value={fmtMoney(liveBiz?.assigned || 0)} sub="Planned, not spent" />
+          <Stat icon={<Info className="h-5 w-5" />} label="Personal Assigned" value={fmtMoney(livePer?.assigned || 0)} sub="Planned, not spent" />
+          <Stat icon={<Receipt className="h-5 w-5" />} label="Voucher Liability" value={fmtMoney(liveBiz?.voucher_liability || 0)} sub="Future labor credit owed" />
+          <Stat icon={<TrendingUp className="h-5 w-5" />} label="Business Unassigned" value={fmtMoney(liveBiz?.unassigned || 0)} sub="Free to allocate" />
+          <Stat icon={<TrendingUp className="h-5 w-5" />} label="Personal Unassigned" value={fmtMoney(livePer?.unassigned || 0)} sub="Free to allocate" />
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          Live Cash shows money still in the account. Assigned money is planned but not spent yet. Voucher Liability is future labor credit owed.
+        </p>
+      </Card>
 
       {/* A. Business */}
       <Card className="p-5 space-y-3">
