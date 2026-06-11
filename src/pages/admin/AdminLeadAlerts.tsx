@@ -161,3 +161,12 @@ export default function AdminLeadAlerts() {
     </div>
   );
 }
+
+function DiagRow({ k, v, bad }: { k: string; v: any; bad?: boolean }) {
+  return (
+    <div className={`flex justify-between gap-2 ${bad ? "text-destructive" : ""}`}>
+      <span className="text-muted-foreground">{k}</span>
+      <span>{String(v)}</span>
+    </div>
+  );
+}
