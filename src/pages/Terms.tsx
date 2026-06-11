@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 
-function _useTitle(t){ useEffect(()=>{const o=document.title;document.title=t;return()=>{document.title=o;};},[t]); }
+function _useTitle(t:string){ useEffect(()=>{const o=document.title;document.title=t;return()=>{document.title=o;};},[t]); return null; }
 export default function Terms() {
   return (
     <div className="container-tight py-10 prose prose-sm max-w-3xl">
-      {/*title*/}{_useTitle("Terms of Service | Shabba & Sons Electric")}
+      {(_useTitle as any)("Terms of Service | Shabba & Sons Electric")}
       
       <h1>Terms of Service</h1>
       <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
