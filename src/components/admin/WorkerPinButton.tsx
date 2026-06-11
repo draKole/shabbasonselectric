@@ -112,6 +112,14 @@ export default function WorkerPinButton({ worker, onDone }: { worker: Worker; on
           )}
         </DialogContent>
       </Dialog>
+      <Dialog open={!!errOpen} onOpenChange={(o) => !o && setErrOpen(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Couldn't create PIN</DialogTitle></DialogHeader>
+          <p className="text-sm text-destructive whitespace-pre-wrap">{errOpen}</p>
+          <p className="text-xs text-muted-foreground">If this keeps happening, check the worker-pin-set edge function logs.</p>
+          <div className="flex justify-end"><Button onClick={() => setErrOpen(null)}>Close</Button></div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
