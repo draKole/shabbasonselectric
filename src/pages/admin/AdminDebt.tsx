@@ -25,7 +25,7 @@ type Debt = {
   notes: string | null;
   paid_off: boolean;
 };
-type Payment = { id: string; debt_id: string; amount: number; paid_on: string; method: string; notes: string | null };
+type Payment = { id: string; debt_id: string; amount: number; paid_on: string; method: string; notes: string | null; paid_from?: string | null; affects_live_cash?: boolean };
 
 const TYPES = ["credit card", "personal loan", "family debt", "business debt", "emergency debt", "vehicle", "other"];
 const SCOPES = ["personal", "business"];
@@ -45,7 +45,7 @@ export default function AdminDebt() {
   const [editing, setEditing] = useState<Partial<Debt>>(empty);
   const [payOpen, setPayOpen] = useState(false);
   const [payDebt, setPayDebt] = useState<Debt | null>(null);
-  const [payForm, setPayForm] = useState<{ id?: string; amount: string; method: string; paid_on: string; notes: string }>({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" });
+  const [payForm, setPayForm] = useState<{ id?: string; amount: string; method: string; paid_on: string; paid_from: string; notes: string; affects_live_cash: boolean }>({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), paid_from: "personal", notes: "", affects_live_cash: true });
 
   async function load() {
     const [{ data: d }, { data: p }] = await Promise.all([
@@ -92,6 +92,8 @@ export default function AdminDebt() {
       amount: Number(payForm.amount),
       method: payForm.method,
       paid_on: payForm.paid_on || new Date().toISOString().slice(0,10),
+      paid_from: payForm.paid_from,
+      affects_live_cash: payForm.affects_live_cash,
       notes: payForm.notes || null,
     };
     const { error } = payForm.id
@@ -99,7 +101,7 @@ export default function AdminDebt() {
       : await supabase.from("debt_payments").insert(payload);
     if (error) return toast.error(error.message);
     toast.success(payForm.id ? "Payment updated" : "Payment logged");
-    setPayOpen(false); setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" }); setPayDebt(null); load();
+    setPayOpen(false); setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), paid_from: "personal", notes: "", affects_live_cash: true }); setPayDebt(null); load();
   }
   async function delPayment(p: Payment) {
     if (!confirm(`Delete this $${Number(p.amount).toFixed(2)} payment?`)) return;
@@ -110,12 +112,12 @@ export default function AdminDebt() {
   function openEditPayment(p: Payment) {
     const d = debts.find((x) => x.id === p.debt_id) || null;
     setPayDebt(d);
-    setPayForm({ id: p.id, amount: String(p.amount), method: p.method, paid_on: p.paid_on, notes: p.notes || "" });
+    setPayForm({ id: p.id, amount: String(p.amount), method: p.method, paid_on: p.paid_on, paid_from: p.paid_from || d?.debt_scope || "personal", notes: p.notes || "", affects_live_cash: p.affects_live_cash !== false });
     setPayOpen(true);
   }
   function openNewPayment(d: Debt) {
     setPayDebt(d);
-    setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" });
+    setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), paid_from: d.debt_scope || "personal", notes: "", affects_live_cash: true });
     setPayOpen(true);
   }
 
@@ -249,7 +251,7 @@ export default function AdminDebt() {
         </div>
       </Card>
 
-      <Dialog open={payOpen} onOpenChange={(o) => { setPayOpen(o); if (!o) setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), notes: "" }); }}>
+      <Dialog open={payOpen} onOpenChange={(o) => { setPayOpen(o); if (!o) setPayForm({ amount: "", method: "cash", paid_on: new Date().toISOString().slice(0,10), paid_from: "personal", notes: "", affects_live_cash: true }); }}>
         <DialogContent>
           <DialogHeader><DialogTitle>{payForm.id ? "Edit Payment" : "Log Payment"} — {payDebt?.name}</DialogTitle></DialogHeader>
           <div className="space-y-3">
@@ -263,6 +265,16 @@ export default function AdminDebt() {
                 <SelectContent>{METHODS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div><Label>Paid from</Label>
+              <Select value={payForm.paid_from} onValueChange={(v) => setPayForm({ ...payForm, paid_from: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="business">Business</SelectItem><SelectItem value="personal">Personal</SelectItem></SelectContent>
+              </Select>
+            </div>
+            <label className="flex items-center justify-between rounded-md border border-border p-3 cursor-pointer">
+              <span className="text-sm">Already paid before cash reset / do not affect live cash</span>
+              <input type="checkbox" checked={!payForm.affects_live_cash} onChange={(e) => setPayForm({ ...payForm, affects_live_cash: !e.target.checked })} />
+            </label>
             <div><Label>Notes</Label><Textarea value={payForm.notes} onChange={(e) => setPayForm({ ...payForm, notes: e.target.value })} /></div>
             <Button onClick={logPayment} className="w-full gap-1 bg-success text-success-foreground hover:bg-success/90"><Save className="h-4 w-4" />{payForm.id ? "Save Changes" : "Log Payment"}</Button>
           </div>
