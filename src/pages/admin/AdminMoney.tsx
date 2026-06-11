@@ -21,6 +21,7 @@ export default function AdminMoney() {
   const [month, setMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
   const { presets: bizPresets, active: bizActive } = useAllocationPresets("business");
   const { presets: personalPresets, active: personalActive } = useAllocationPresets("personal");
+  const { biz: liveBiz, per: livePer, loading: liveLoading } = useLiveCash();
 
   useEffect(() => {
     supabase.from("job_payments").select("id, amount, paid_on, method, is_deposit")
