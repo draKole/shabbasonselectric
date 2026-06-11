@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList, KeyRound, Copy } from "lucide-react";
+import { Trash2, Plus, Clock, DollarSign, Pencil, Archive, ArchiveRestore, Check, X, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { useWorkerDocuments, WORKER_DOC_KEYS, seedWorkerDocs } from "@/lib/useWorkerDocuments";
 import { usePeriodFilter, inRange } from "@/lib/usePeriodFilter";
+import WorkerPinButton from "@/components/admin/WorkerPinButton";
 
 export default function AdminWorkers() {
   const [workers, setWorkers] = useState<any[]>([]);
@@ -323,9 +324,9 @@ export default function AdminWorkers() {
                   </div>
                   {wk.phone && <div className="text-xs text-muted-foreground">{wk.phone}{wk.email ? ` · ${wk.email}` : ""}</div>}
                 </div>
-                <div className="flex gap-1 flex-wrap">
+                <div className="flex gap-1 flex-wrap items-center">
                   <Button size="sm" variant="outline" onClick={() => setOpenChecklist(wk.id)} className="gap-1"><ClipboardList className="h-3.5 w-3.5" />{onboardPct(wk.id)}%</Button>
-                  <WorkerLoginButton worker={wk} onDone={load} />
+                  <WorkerPinButton worker={wk} onDone={load} />
                   <Button size="sm" variant="outline" onClick={() => openEdit(wk)}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="outline" onClick={() => setActive(wk.id, !wk.active)}>
                     {wk.active ? <Archive className="h-3.5 w-3.5" /> : <ArchiveRestore className="h-3.5 w-3.5" />}
