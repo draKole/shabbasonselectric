@@ -1,201 +1,234 @@
-# Plan: Monthly Reset + Properties + Invites + SMS + Allocation Cleanup
 
-Scope is additive only. No table renames. Portfolio, Vouchers public, admin nav, Money Tracker, Reports, Workers/Paystubs/Bills/Debt/Estimates/Calendar UI shells, Business/Personal layouts stay intact and only get the new data wiring described below.
+# Finish Scaffolded Systems + Fix Money Flow
 
----
-
-## 1. Property / Address Tracking (Jobs + Contacts)
-
-**Schema (new migration)**
-- New table `properties`:
-  - `customer_id` (FK customers, on delete cascade)
-  - `nickname`, `property_type` (enum text: `personal_home | investment | rental | commercial | nonprofit | other`)
-  - `owner_name`, `owner_phone`
-  - `address`, `city`, `state` (default 'OH'), `zip`
-  - `notes`, `is_primary` boolean
-  - timestamps, RLS admin-only + worker read via job link
-- `jobs.property_id uuid` (nullable, FK properties)
-- Data migration: for every distinct (`customer_id`, normalized address) on existing jobs, create one `properties` row and set `jobs.property_id`. First property per customer = `is_primary`. Existing job address fields left untouched for backward compatibility.
-
-**UI**
-- `useProperties(customerId)` hook.
-- Job create/edit dialog: contact picker → property picker (existing list for that customer) → "Add new property" inline form (type, nickname, owner, address, notes). If only one property, auto-select with "Change" link.
-- Quick Add Job mirrors the same flow.
-- Job detail header shows: customer name, property type badge, full address, nickname.
-- Contact detail page: new "Properties" section grouping jobs under each property; add/edit/delete property buttons.
+Scope is fix-and-finish only. No table renames, no rebuilds. Existing tables (`allocations`, `bill_occurrences`, `properties`, `personal_assignments`, `lead_notification_settings`, `owner_pay_transfers`, etc.) are already in place and will be reused.
 
 ---
 
-## 2. Monthly Reset for Workers / Paystubs / Savings
+## 1. Job Balance Bug (highest priority)
 
-No schema change. All queries already have date columns (`worker_time_entries.work_date`, `paystubs.period_start/end`, `worker_savings_ledger.created_at`, `worker_payments.paid_on`).
+**Root cause:** `recompute_job_totals` only fires from `job_payments` and `job_total` change triggers. On `INSERT INTO jobs`, `amount_paid`/`balance_due` are never computed, so `balance_due` stays NULL until a payment touches the row.
 
-- New shared hook `usePeriodFilter()` returning `{ range, setRange, from, to }` for: `this_week | this_month | last_month | ytd | all`.
-- Persist selection per-page in `localStorage` (default `this_month`).
-- Update Workers list page + worker cards to read totals scoped to the active range (hours, earned, paid, balance owed). Add range toggle in page header.
-- Same toggle added to Paystubs list, Worker Savings, Worker Payments, Extra Worker Cost, Owner-Worker pay views.
-- Worker detail page: monthly summary row + a "YTD" expandable section so YTD stays accessible.
-- Reports monthly cards already month-scoped; just confirm they share the same `from/to` helpers.
-
----
-
-## 3. Worker Invite Edge Function Fix
-
-**Root-cause checks**
-- Read `supabase/functions/worker-invite/index.ts` end-to-end; add the function to `supabase/config.toml` with `verify_jwt = false` and validate JWT in code using `getClaims` (current platform default for signing-keys).
-- Ensure admin check uses `has_role(auth.uid(), 'admin')` via service-role client (current anon client can't read user_roles reliably across all configs).
-- Wrap every failure path to return JSON `{ error, code, detail }` with status 400/401/403/500 (never throw a bare 500).
-
-**Behavior**
-- If worker missing both email and phone → 400 `"Worker needs an email or phone before invite can be created."`
-- If `auth.admin.listUsers` finds an existing user with that email → branch to password reset link (`generateLink({ type: 'recovery' })`) and return `{ mode: 'reset', actionLink }`.
-- Else create user with temp password, set `workers.auth_user_id`, `workers.invite_status = 'invited'`, return `{ mode: 'new', email, tempPassword, portalUrl }`.
-- On successful first login, separate trigger or RPC flips `invite_status = 'active'` (already partially wired — verify).
-
-**Client (`AdminWorkers` / worker detail)**
-- Catch `FunctionsHttpError`, read `error.context.response.json()` and surface the real message in a toast.
-- Show modal with copyable Portal URL + login info + "Copy all" button.
-- Re-invite button visible when `invite_status in ('invited','active')`.
+**Fix:**
+- Add `AFTER INSERT ON jobs` trigger → `recompute_job_totals(NEW.id)`.
+- Extend `recompute_job_totals` to also subtract voucher credit applied (sum from `voucher_redemptions` where `job_id = _job_id`).
+- Add `AFTER INSERT/UPDATE/DELETE ON voucher_redemptions` trigger → recompute affected job.
+- Backfill once: `UPDATE jobs SET updated_at = now()` after deploying — actually call `recompute_job_totals` for every job in a one-shot SQL block in the migration.
+- Add Admin Tools button "Recalculate Job Balances" → edge function `recompute-job-balances` that loops all jobs.
+- Verify Jobs list, Job detail, Contact detail, Property detail, Dashboard, Reports all read `balance_due` from `jobs` (no local recomputes drifting).
 
 ---
 
-## 4. SMS Lead Alerts (Twilio Connector)
+## 2. Live Cash Views (foundation for everything else)
 
-**Setup**
-- Use `standard_connectors--connect` for `twilio` (user already picked Twilio connector).
-- New table `lead_notification_settings` (single-row, admin-only):
-  - `sms_enabled`, `alert_phone`, `alert_email`
-  - `notify_service_request`, `notify_contact_form`, `notify_voucher_request`, `notify_application`, `notify_estimate_request` (booleans)
-  - `from_number` (Twilio number)
-- New edge function `lead-alert`:
-  - Input: `{ lead_type, name, phone, service, address_city }`
-  - Loads settings, checks toggle for that lead type.
-  - If Twilio connector creds present → POST to gateway `/Messages.json`.
-  - If not configured → return `{ ok: true, sent: false, reason: 'sms_not_configured' }`.
-  - Always returns 200 unless settings load fails; never blocks the originating insert.
-- New edge function `lead-alert` is fire-and-forget invoked from existing public submit handlers (service request, schedule, contact form, voucher request, application). Lead row is committed first; alert is invoked after — wrapped in try/catch so failures don't break submission.
-- Settings UI: new card "Lead Notification Settings" inside the Settings page with all toggles, phone, email, status badge ("SMS provider not connected" / "Connected • +1…").
-- Failed sends logged to a small `lead_alert_log` table (lead_type, ok, error, sent_at) shown in an Admin alerts list under Settings.
+Two SQL views, computed on demand, never stored:
 
-Message: `New Shabba Electric Lead: {Name}, {Phone}, {Service}, {Address/City}. Open admin to follow up.`
+**`v_business_live_cash`** — single-row view:
+- `+` job_payments.amount (non-void jobs)
+- `+` voucher cash received (voucher_redemptions.cash_amount where status active/redeemed)
+- `+` historical_income where `count_in_cash = true AND already_spent = false`
+- `−` job_materials.cost where paid_by = 'me'
+- `−` worker_payments.amount
+- `−` bill_occurrences.amount where paid_status='paid' AND paid_from='business'
+- `−` debt_payments.amount where source='business'
+- `−` personal_expenses where source='business' (if any)
+- `−` owner_pay_transfers.amount
 
----
+**`v_business_assigned`** = sum of `allocations` rows where status='assigned' (not yet transferred/spent).
+**`v_business_unassigned`** = live_cash − assigned.
 
-## 5. Recurring Bills — Per-Month Occurrences
+**`v_personal_live_cash`**:
+- `+` owner_pay_transfers.amount
+- `+` manual personal_income rows
+- `−` personal bill_occurrences paid
+- `−` personal debt_payments
+- `−` personal_expenses where source='personal'
 
-**Schema (new migration)**
-- New table `bill_occurrences`:
-  - `bill_id` (FK bills, cascade)
-  - `period_month` (date, first of month)
-  - `due_date`
-  - `amount` (copied from bill at generation; editable)
-  - `paid` boolean, `paid_on` date, `paid_amount`
-  - `notes`
-  - unique (`bill_id`, `period_month`)
-  - admin RLS
-- Edge function `generate-bill-occurrences` (idempotent): for every active recurring bill, ensure an occurrence exists for the current month (and any missed months back to bill creation, capped at 12). Called:
-  - On app load (admin-only, throttled to once per day per browser).
-  - From a `pg_cron` job at 00:05 on the 1st of each month via `pg_net` (use insert tool, not migration).
-- One-time backfill in the migration: for existing recurring bills, create an occurrence for the current month using their current `paid` state.
-- Non-recurring bills: ignore — keep working off `bills` row directly.
+**`v_personal_assigned`** = sum of `personal_assignments` where status='assigned'.
 
-**UI**
-- Bills page reads occurrences for the selected month (default current). Cards show "This month / Paid this month / Remaining this month / Past due unpaid (all prior months unpaid) / YTD paid".
-- "Mark paid" toggles the occurrence, not the parent bill.
-- Both business and personal bill views use the same model (filtered by `bill_type`).
+**`v_voucher_liability`** = sum of remaining credit on vouchers where status in ('active','partially_used').
+
+Business page, Personal page, Money Tracker, Dashboard, Reports all switch to reading these views. Labels everywhere: Live Cash / Assigned / Unassigned / Transferred / Spent.
 
 ---
 
-## 6. Weekly Allocation + Owner Pay Transfer
+## 3. Recurring Bills — Monthly Occurrences
 
-**Schema (new migration)**
-- New table `allocations`:
-  - `period_week` (date, Monday of week)
-  - `source_type` (`job_payment | manual_business | manual_personal`)
-  - `source_id` (nullable)
-  - `gross_amount`, `direct_costs`, `net_amount`
-  - `owner_pay_amount`, `overhead_amount`, `reserve_amount`
-  - `status` (`unallocated | allocated | transferred | spent | locked`)
-  - `notes`, timestamps
-- Settings: add `business_split_owner_pct` (85), `business_split_overhead_pct` (10), `business_split_reserve_pct` (5) to `app_settings`, editable from Settings page (whitelist already allows specific keys — add these to read whitelist).
-- New table `owner_pay_transfers`:
-  - `allocation_id`, `amount`, `transferred_on`, `status` (`pending | paid`), `notes`.
-  - Marks owner-pay portion that has moved from Business → Personal.
-- New table `personal_assignments`:
-  - `source_transfer_id` (FK owner_pay_transfers, nullable for other income), `target_type` (`bill_occurrence | debt | emergency | other`), `target_id`, `amount`, `status` (`assigned | paid | spent`), timestamps.
+Keep existing `bill_occurrences` table. Fix the generator + UI.
 
-**Logic**
-- New helper `useWeeklyAllocation()`:
-  - Pulls unallocated job payments (existing `job_payments`) for the week.
-  - For each: net = payment − (materials + worker labor + owner-worker pay + permits + other_expenses tied to that job, week-scoped).
-  - Splits net by settings into owner / overhead / reserve.
-  - Auto-runs at week close (Friday) if not manually allocated — implemented via the same daily cron used for bill occurrences.
-- Owner-pay transfer flow: button "Transfer to Personal" on allocation → creates `owner_pay_transfers` row, marks allocation `transferred`, increases Personal available cash.
-- Business page totals (`useBusinessTotals`) reads:
-  - Cash available = sum allocations(unallocated|allocated, not transferred/spent) + overhead + reserve
-  - Assigned to business bills = sum bill_occurrences assigned + unpaid
-  - Paid this month / remaining / reserve / overhead / unassigned — all derived from allocations & occurrences.
-- Personal page totals (`usePersonalTotals`) reads:
-  - Income available = sum owner_pay_transfers(paid) + other personal income − sum personal_assignments(paid|spent)
-  - Assigned to bills/debt = personal_assignments(assigned)
-  - Paid bills/debt = personal_assignments(paid)
-  - Emergency fund = personal_assignments(target_type='emergency', status in (assigned,paid))
-  - Remaining unassigned = income available − assigned − paid
-- Status enforcement: a single SQL view `v_allocation_available` returns only rows where status in (`unallocated`,`allocated`). UI never reads transferred/spent rows as "available."
+- Edge fn `generate-bill-occurrences` returns `{created, existing}` and the Refresh button toasts "X created, Y already existed."
+- Unique index `(bill_id, due_month)` to prevent duplicates.
+- Auto-call generator on Bills page load (idempotent) so current month always exists.
+- "Mark Paid" dialog asks: paid_date, paid_from (business/personal), payment_method, notes → writes to `bill_occurrences`.
+- Past-due = unpaid occurrence whose due_date < today.
+- Bills list groups by: This Month / Past Due / Upcoming / Paid This Month.
+- Business bills only hit Business live cash; personal only hit Personal.
 
 ---
 
-## 7. Reports Reconciliation
-- No structural change. Confirm:
-  - Monthly cards use `usePeriodFilter` with `this_month`.
-  - YTD pulled separately via `ytd` range.
-  - Historical income flagged `already_spent` excluded from allocation feed (already done last cycle — re-verify).
-  - Business vs personal totals query the new allocation tables, not raw job_payments.
-  - Owner-pay transfers appear in both: Business as outflow (`owner_pay_paid`) and Personal as inflow.
+## 4. Weekly Allocation UI + Owner Pay Transfer
+
+Tables exist; build the UI on Business page.
+
+**"Run Weekly Allocation" button:**
+- Reads `v_business_unassigned`.
+- Pulls split from `allocation_presets` (default 85/10/5, editable in Settings).
+- Shows preview modal: "Allocate $X — Owner Pay $0.85X, Overhead $0.10X, Reserve $0.05X for week of [Mon–Sun]".
+- On confirm, inserts 3 `allocations` rows with `week_start`, `status='assigned'`.
+- Guard: if a batch already exists for that week, show existing batch + "Reverse" (admin-confirm) instead of duplicating.
+
+**Allocation semantics (per your spec):** allocations DO NOT reduce Live Cash, only Unassigned. They reduce Live Cash only when transferred/spent.
+
+**"Transfer Owner Pay to Personal" button** (next to a pending owner-pay allocation):
+- Inserts `owner_pay_transfers` row (amount, date, allocation_id).
+- Updates allocation status → `transferred`.
+- Both views recompute automatically (Business live cash −, Personal live cash +).
 
 ---
 
-## Technical Details
+## 5. Personal & Business Assignments UI
 
-**New migrations (in order)**
-1. `properties` table + `jobs.property_id` + backfill.
-2. `bill_occurrences` table + RLS + current-month backfill.
-3. `allocations`, `owner_pay_transfers`, `personal_assignments` tables + RLS + `v_allocation_available` view + split-pct settings keys.
-4. `lead_notification_settings` (single row) + `lead_alert_log` + RLS.
+Use existing `personal_assignments`; add `business_assignments` table if missing (same shape).
 
-**New edge functions**
-- `lead-alert` (Twilio gateway sender).
-- `generate-bill-occurrences` (cron + on-demand).
-- `weekly-allocation-run` (cron + on-demand).
-- Fix `worker-invite` (config.toml entry, service-role admin check, structured errors, reset-mode branch).
-
-**Twilio**
-- Use `standard_connectors--connect` with `connector_id: twilio`. After link, `TWILIO_API_KEY` + `LOVABLE_API_KEY` are available to edge functions. From-number stored in `lead_notification_settings.from_number`.
-
-**Cron**
-- Use `supabase--insert` (not migration) to register two pg_cron jobs hitting the new edge functions (bill occurrences daily 00:05, allocation Friday 23:00).
-
-**Front-end files (new/edited)**
-- New: `src/lib/useProperties.ts`, `usePeriodFilter.ts`, `useBillOccurrences.ts`, `useAllocations.ts`, `useOwnerPayTransfers.ts`, `usePersonalAssignments.ts`, `useLeadAlertSettings.ts`.
-- New pages/sections: `AdminLeadSettings` card inside Settings, properties section in contact detail, property picker in job dialogs.
-- Edited: `AdminJobs*`, `AdminContacts*` detail, `AdminWorkers*`, `AdminPaystubs`, `AdminWorkerSavings`, `AdminBills`, `Business`, `Personal`, `AdminReports`, public form pages (`Schedule.tsx`, `Contact*`, `ServiceVouchers` request flow, `Apply*`) to invoke `lead-alert`.
-- `worker-invite/index.ts` rewrite + `supabase/config.toml` entry.
+- Personal page: "Assign Money" panel — categories: Bills, Debt, Emergency, Car, Savings, Investing, Spending, Other. Amount + note + target (optional bill_id/debt_id).
+- Business page: same panel — Business Bills, Business Debt, Reserve, Tools, Payroll Reserve, Insurance, Marketing, Permits/Software, Other.
+- Status lifecycle: `assigned` → `spent` (auto when linked bill/debt marked paid) / `cancelled` / `reversed`.
+- Assigned amounts reduce Unassigned but not Live Cash.
 
 ---
 
-## Out of scope (will not touch)
-- Portfolio editor, public Vouchers pages, admin sidebar nav, Money Tracker UI, Estimates, Calendar, Debt page UI (numbers update automatically through allocations).
+## 6. Worker Login — PIN Primary
 
-## Manual tests to run after build
-1. Create a contact, add 2 properties, create jobs against each — verify both show on contact detail and on job header.
-2. Click Create Worker Login on a worker missing email → expect clear error message; add email, retry → copyable creds modal.
-3. Submit a public Schedule form → SMS arrives at alert phone; toggle SMS off → no SMS, lead still saved, no error toast.
-4. Mark a recurring bill paid in current month → flip system clock to next month (or wait) → bill shows unpaid again, prior month still shows paid.
-5. Add a job payment, leave it unallocated, run "Allocate week" → owner/overhead/reserve split appears; click "Transfer to Personal" → Personal available cash increases, Business available cash decreases.
-6. Assign personal cash to a bill → mark paid → remaining personal cash drops, paid total rises, allocation no longer shows as available.
-7. Switch worker page filter to "Last month" → totals match historical; switch to "This month" on the 1st → resets to $0.
+Drop reliance on Supabase auth invite for primary path.
 
-## Known limitations
-- Twilio SMS Geo Permissions & Pumping Protection must be enabled in Twilio console manually.
-- Bill occurrence generation depends on the daily cron running; if cron is paused, opening Admin triggers a catch-up.
-- Allocation auto-run on Friday assumes server timezone UTC; week boundary may shift ±1 day for late-night EST entries (acceptable).
+**Schema:** add to `workers`: `login_pin_hash text`, `login_status text default 'not_invited'` (not_invited / pin_created / active / disabled), `last_login_at timestamptz`.
+
+**Admin "Create / Reset Worker Login" dialog:**
+- Requires email OR phone. If neither → inline error "Worker needs an email or phone before login can be created."
+- Generates 6-digit PIN, hashes it, stores hash, sets `login_status='pin_created'`.
+- Shows copyable card: Portal URL `/worker`, identifier (phone/email), PIN. One-time reveal.
+- "Reset PIN" regenerates.
+- "Disable" sets status='disabled'.
+
+**Worker login page `/worker/login`:**
+- Input: phone or email + PIN.
+- Edge fn `worker-pin-login` looks up worker by identifier, verifies PIN hash, mints a session via Supabase admin createUser/signIn-with-magic equivalent — or uses a signed JWT stored in localStorage that an RLS predicate `my_worker_id_from_jwt()` reads. Simpler: create a hidden auth user keyed to the worker on first PIN setup, then PIN endpoint issues a one-time magic link consumed silently.
+
+**Worker dashboard hardening:** RLS already scopes via `my_worker_id()`. Add explicit denies for jobs/profit/admin tables. Audit dashboard component to ensure it only queries: own profile, own time entries, own paystubs, own savings, own assigned tasks.
+
+**Admin → Worker Invite Logs:** new table `worker_invite_log(worker_id, action, success, error, actor_id, created_at)` written on every invite/reset/login attempt. Display in admin panel.
+
+---
+
+## 7. Twilio / SMS Lead Alerts
+
+Twilio connector is linked; `TWILIO_API_KEY` is present. Likely failure: missing `TWILIO_FROM_NUMBER` setting, or `lead-alert` fn not parsing connector gateway correctly.
+
+**Admin → Lead Alerts page additions:**
+- Status grid: Twilio configured ✓/✗, Alert phone saved, From number saved, Last test status, Last error.
+- Warning banners for SMS Geo Permissions + SMS Pumping Protection (linking to Twilio console).
+- "Send Test SMS" button → edge fn `lead-alert-test` → returns exact Twilio response/error, written to `lead_alert_log`.
+- Recent log table (last 20).
+
+**`lead-alert` edge fn fixes:**
+- Always insert lead first; SMS wrapped in try/catch.
+- On failure, write to `lead_alert_log` with status='failed' and error text.
+- Never throw back to the public form.
+- Email fallback hook if alert_email set (no-op log if no email provider configured).
+
+---
+
+## 8. Voucher Delete / Void + Liability
+
+- Add `status` enum values: active, partially_used, redeemed, void, refunded, cancelled (extend existing).
+- Admin Vouchers row actions:
+  - If no redemptions AND no linked job → "Delete" (hard delete, confirm).
+  - Otherwise → "Void", "Cancel", "Refund" status changes only.
+- Confirmation copy: "Are you sure? This removes/cancels this voucher and updates outstanding voucher liability."
+- `v_voucher_liability` excludes void/refunded/cancelled/redeemed; surfaces remaining credit only.
+- Surface liability on Business page and Money Tracker.
+
+---
+
+## 9. Legal Pages
+
+New routes + footer links:
+- `/privacy-policy`
+- `/terms`
+- `/service-policy`
+- `/voucher-terms`
+
+Plain-English content per your spec, professional and customer-friendly, with the attorney-review disclaimer at the bottom of each.
+
+---
+
+## 10. Business Health Check
+
+Admin Tools → "Run Business Health Check" button → edge fn `business-health-check` returns structured findings:
+
+Checks:
+- Jobs with `job_total > 0 AND balance_due IS NULL`
+- Jobs with payments not matching balance
+- Orphan `job_payments` (no job)
+- Active vouchers missing from liability rollup
+- Redeemed/void vouchers still in liability
+- Recurring bills missing current-month occurrence
+- Duplicate `(bill_id, due_month)` occurrences
+- Worker time entries with NULL worker_id or job_id
+- Paystubs not linked to paid time entries
+- `v_business_live_cash` < 0 or `v_personal_live_cash` < 0
+- Allocations marked `transferred` without matching `owner_pay_transfers` row (and vice versa)
+- `historical_income` where `already_spent=true AND count_in_cash=true`
+
+Each finding: severity, count, "Fix" button where safe (e.g., generate missing occurrences).
+
+---
+
+## Technical / File Plan
+
+**Migrations (one combined file):**
+- Job balance: insert trigger on jobs, voucher_redemption triggers, extend `recompute_job_totals` for voucher credit, backfill loop.
+- Views: `v_business_live_cash`, `v_business_assigned`, `v_business_unassigned`, `v_personal_live_cash`, `v_personal_assigned`, `v_voucher_liability` (all SECURITY INVOKER; GRANT SELECT to authenticated).
+- `workers` columns: `login_pin_hash`, `login_status`, `last_login_at`.
+- New tables: `business_assignments`, `worker_invite_log` (with GRANTs, RLS, policies per project pattern).
+- Unique index `bill_occurrences(bill_id, due_month)`.
+- Voucher status enum extension.
+
+**Edge functions:**
+- `recompute-job-balances` (admin one-shot)
+- `worker-pin-create` (admin)
+- `worker-pin-login` (public)
+- `lead-alert` (fix)
+- `lead-alert-test` (new)
+- `business-health-check` (new)
+
+**Frontend:**
+- `src/pages/admin/AdminBusiness.tsx` — Live Cash card, Allocation panel, Transfer Owner Pay, Assignments panel, Voucher Liability card.
+- `src/pages/admin/AdminPersonal.tsx` — Live Cash card, Assignments panel.
+- `src/pages/admin/AdminMoneyTracker.tsx` — switch to views.
+- `src/pages/admin/AdminBills.tsx` — Mark Paid dialog (paid_from/method/date/notes), grouping.
+- `src/pages/admin/AdminVouchers.tsx` — delete/void/cancel/refund actions.
+- `src/pages/admin/AdminWorkers.tsx` — Create/Reset PIN dialog, copyable info card, login status badge.
+- `src/pages/admin/AdminLeadAlerts.tsx` — diagnostics grid, test button, log table.
+- `src/pages/admin/AdminTools.tsx` (new or extend Settings) — Recalculate Job Balances + Run Health Check.
+- `src/pages/worker/WorkerLogin.tsx` — phone/email + PIN form.
+- `src/pages/Privacy.tsx`, `Terms.tsx`, `ServicePolicy.tsx`, `VoucherTerms.tsx` + Footer links + route registration.
+- Hooks: `useLiveCash.ts`, `useAllocations.ts`, `useAssignments.ts`, `useHealthCheck.ts`.
+
+**Out of scope:** Portfolio, public Vouchers marketing, Paystub math, Worker Savings math, Historical Income totals, Reports layout, Workers profile fields, existing Jobs/Contacts/Estimates/Calendar features.
+
+---
+
+## Manual Tests (after build)
+
+1. Create new job with $500 total — balance shows $500 immediately on list and detail.
+2. Add $100 payment → balance $400. Delete payment → balance $500.
+3. Apply $50 voucher redemption → balance $450.
+4. Click Refresh Bills twice — second click says "0 created, N already existed."
+5. Mark a recurring bill paid this month — next month still shows unpaid.
+6. Run Weekly Allocation on $1000 — Live Cash stays $1000, Unassigned becomes $0, three allocations appear.
+7. Transfer Owner Pay $850 — Business Live Cash drops to $150, Personal Live Cash rises $850, allocation marked transferred.
+8. Create worker with phone only → PIN created, login with phone+PIN works.
+9. Lead Alerts → Send Test SMS, see Twilio response in UI. Submit public Schedule form with Twilio disabled → lead still saves.
+10. Delete unused voucher; void used voucher; liability updates.
+11. Run Health Check on clean db → all green.

@@ -123,7 +123,9 @@ export type Database = {
           notes: string | null
           paid: boolean
           paid_amount: number
+          paid_from: string | null
           paid_on: string | null
+          payment_method: string | null
           period_month: string
           updated_at: string
         }
@@ -136,7 +138,9 @@ export type Database = {
           notes?: string | null
           paid?: boolean
           paid_amount?: number
+          paid_from?: string | null
           paid_on?: string | null
+          payment_method?: string | null
           period_month: string
           updated_at?: string
         }
@@ -149,7 +153,9 @@ export type Database = {
           notes?: string | null
           paid?: boolean
           paid_amount?: number
+          paid_from?: string | null
           paid_on?: string | null
+          payment_method?: string | null
           period_month?: string
           updated_at?: string
         }
@@ -210,6 +216,48 @@ export type Database = {
           priority?: string
           recurring?: boolean
           recurring_frequency?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      business_assignments: {
+        Row: {
+          amount: number
+          assigned_on: string
+          category: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          source_id: string | null
+          status: string
+          target_id: string | null
+          target_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          assigned_on?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_id?: string | null
+          status?: string
+          target_id?: string | null
+          target_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          assigned_on?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          source_id?: string | null
+          status?: string
+          target_id?: string | null
+          target_type?: string
           updated_at?: string
         }
         Relationships: []
@@ -1831,6 +1879,44 @@ export type Database = {
         }
         Relationships: []
       }
+      worker_invite_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          error: string | null
+          id: string
+          success: boolean
+          worker_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          success?: boolean
+          worker_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          success?: boolean
+          worker_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "worker_invite_log_worker_id_fkey"
+            columns: ["worker_id"]
+            isOneToOne: false
+            referencedRelation: "workers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       worker_payments: {
         Row: {
           amount: number
@@ -1978,6 +2064,10 @@ export type Database = {
           insurance_pct: number
           invite_status: string
           is_owner: boolean
+          login_identifier: string | null
+          login_last_at: string | null
+          login_pin_hash: string | null
+          login_pin_set_at: string | null
           notes: string | null
           onboarding: Json
           pay_day: string
@@ -2012,6 +2102,10 @@ export type Database = {
           insurance_pct?: number
           invite_status?: string
           is_owner?: boolean
+          login_identifier?: string | null
+          login_last_at?: string | null
+          login_pin_hash?: string | null
+          login_pin_set_at?: string | null
           notes?: string | null
           onboarding?: Json
           pay_day?: string
@@ -2046,6 +2140,10 @@ export type Database = {
           insurance_pct?: number
           invite_status?: string
           is_owner?: boolean
+          login_identifier?: string | null
+          login_last_at?: string | null
+          login_pin_hash?: string | null
+          login_pin_set_at?: string | null
           notes?: string | null
           onboarding?: Json
           pay_day?: string
@@ -2124,6 +2222,49 @@ export type Database = {
         }
         Relationships: []
       }
+      v_business_assigned: {
+        Row: {
+          assigned_total: number | null
+        }
+        Relationships: []
+      }
+      v_business_live_cash: {
+        Row: {
+          bills_out: number | null
+          debt_out: number | null
+          historical_in: number | null
+          live_cash: number | null
+          materials_out: number | null
+          payments_in: number | null
+          transfers_out: number | null
+          voucher_cash_in: number | null
+          worker_pay_out: number | null
+        }
+        Relationships: []
+      }
+      v_personal_assigned: {
+        Row: {
+          assigned_total: number | null
+        }
+        Relationships: []
+      }
+      v_personal_live_cash: {
+        Row: {
+          bills_out: number | null
+          debt_out: number | null
+          live_cash: number | null
+          personal_exp_out: number | null
+          personal_income_in: number | null
+          transfers_in: number | null
+        }
+        Relationships: []
+      }
+      v_voucher_liability: {
+        Row: {
+          outstanding: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       claim_first_admin: { Args: never; Returns: boolean }
@@ -2140,6 +2281,7 @@ export type Database = {
         Returns: boolean
       }
       my_worker_id: { Args: never; Returns: string }
+      recompute_all_job_balances: { Args: never; Returns: number }
       recompute_debt_balance: { Args: { _debt_id: string }; Returns: undefined }
       recompute_job_totals: { Args: { _job_id: string }; Returns: undefined }
       recompute_job_worker_labor: {
