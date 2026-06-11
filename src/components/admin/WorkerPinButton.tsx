@@ -28,16 +28,20 @@ function statusClass(w: Worker) {
 export default function WorkerPinButton({ worker, onDone }: { worker: Worker; onDone: () => void }) {
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<{ pin: string; identifier: string; portal_url: string } | null>(null);
+  const [errOpen, setErrOpen] = useState<string | null>(null);
 
   async function setPin() {
-    if (!worker.email && !worker.phone) return toast.error("Worker needs an email or phone first.");
+    if (!worker.email && !worker.phone) {
+      setErrOpen("This worker has no email or phone. Add one on the worker record first, then try again.");
+      return;
+    }
     const verb = worker.login_pin_hash ? "Reset" : "Create";
     if (!confirm(`${verb} login PIN for ${worker.full_name}? Old PIN will stop working.`)) return;
     setBusy(true);
     try {
       const { data, error } = await supabase.functions.invoke("worker-pin-set", { body: { worker_id: worker.id } });
       if (error) {
-        let detail = error.message;
+        let detail = error.message || "Unknown error";
         try {
           const ctx: any = (error as any).context;
           if (ctx?.response) { const j = await ctx.response.json(); detail = j?.error || detail; }
@@ -45,12 +49,17 @@ export default function WorkerPinButton({ worker, onDone }: { worker: Worker; on
         throw new Error(detail);
       }
       if ((data as any)?.error) throw new Error((data as any).error);
+      if (!(data as any)?.pin) throw new Error("Server returned no PIN. Check edge function logs.");
       setRes(data as any);
+      toast.success("PIN created. Copy the details below.");
       onDone();
     } catch (e: any) {
-      toast.error(e.message || "Failed");
+      const msg = e?.message || "Failed to create PIN";
+      toast.error(msg);
+      setErrOpen(msg);
     } finally { setBusy(false); }
   }
+
 
   async function disableLogin() {
     if (!confirm(`Disable login for ${worker.full_name}? Their PIN will be cleared.`)) return;
