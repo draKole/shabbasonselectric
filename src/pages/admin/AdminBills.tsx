@@ -102,11 +102,21 @@ export default function AdminBills() {
     load();
   }
 
-  async function togglePaid(b: Bill) {
-    const paid = !b.paid;
-    await supabase.from("bills").update({ paid, paid_on: paid ? new Date().toISOString().slice(0, 10) : null }).eq("id", b.id);
+  const [payDialog, setPayDialog] = useState<{ bill: Bill; occ: any | null } | null>(null);
+
+  async function unmarkPaid(b: Bill) {
+    if (b.recurring) {
+      const occ = currentOcc(b.id);
+      if (occ) {
+        await (supabase as any).from("bill_occurrences").update({ paid: false, paid_on: null, paid_amount: 0, paid_from: null, payment_method: null }).eq("id", occ.id);
+      }
+    } else {
+      await supabase.from("bills").update({ paid: false, paid_on: null }).eq("id", b.id);
+    }
+    toast.success("Unmarked paid");
     load();
   }
+
   async function del(id: string) {
     if (!confirm("Delete this bill?")) return;
     await supabase.from("bills").delete().eq("id", id);
@@ -243,9 +253,13 @@ export default function AdminBills() {
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  <Button size="sm" variant={paidNow ? "outline" : "default"} onClick={() => togglePaid(b)} className={paidNow ? "" : "bg-success text-success-foreground hover:bg-success/90"}>
-                    <Check className="h-3.5 w-3.5" /> {paidNow ? "Unmark" : "Mark Paid"}
-                  </Button>
+                  {paidNow ? (
+                    <Button size="sm" variant="outline" onClick={() => unmarkPaid(b)}><Check className="h-3.5 w-3.5" /> Unmark</Button>
+                  ) : (
+                    <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90 gap-1" onClick={() => setPayDialog({ bill: b, occ: b.recurring ? currentOcc(b.id) : null })}>
+                      <Check className="h-3.5 w-3.5" /> Mark Paid
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={() => { setEditing(b); setOpen(true); }}><Pencil className="h-3.5 w-3.5" /></Button>
                   <Button size="sm" variant="outline" onClick={() => del(b.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
@@ -255,6 +269,88 @@ export default function AdminBills() {
           {bills.length === 0 && <div className="text-sm text-muted-foreground p-3">No bills yet. Add one to start tracking.</div>}
         </div>
       </Card>
+
+      <MarkPaidDialog payDialog={payDialog} onClose={(refresh) => { setPayDialog(null); if (refresh) load(); }} />
     </div>
+  );
+}
+
+function MarkPaidDialog({ payDialog, onClose }: { payDialog: { bill: Bill; occ: any | null } | null; onClose: (refresh?: boolean) => void }) {
+  const [f, setF] = useState<{ paid_date: string; paid_from: string; payment_method: string; notes: string }>({
+    paid_date: new Date().toISOString().slice(0, 10),
+    paid_from: "business", payment_method: "cash", notes: "",
+  });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (payDialog) setF({
+      paid_date: new Date().toISOString().slice(0, 10),
+      paid_from: payDialog.bill.bill_type || "business",
+      payment_method: "cash", notes: "",
+    });
+  }, [payDialog]);
+
+  if (!payDialog) return null;
+  const { bill, occ } = payDialog;
+
+  async function save() {
+    setBusy(true);
+    try {
+      if (bill.recurring) {
+        // Create occurrence if missing (current month)
+        const period = new Date().toISOString().slice(0, 7) + "-01";
+        if (!occ) {
+          await (supabase as any).from("bill_occurrences").insert({
+            bill_id: bill.id, period_month: period, amount: bill.amount,
+            paid: true, paid_on: f.paid_date, paid_amount: bill.amount,
+            paid_from: f.paid_from, payment_method: f.payment_method, notes: f.notes || null,
+          });
+        } else {
+          await (supabase as any).from("bill_occurrences").update({
+            paid: true, paid_on: f.paid_date, paid_amount: Number(bill.amount),
+            paid_from: f.paid_from, payment_method: f.payment_method, notes: f.notes || null,
+          }).eq("id", occ.id);
+        }
+      } else {
+        await supabase.from("bills").update({ paid: true, paid_on: f.paid_date } as any).eq("id", bill.id);
+      }
+      toast.success("Marked paid");
+      onClose(true);
+    } catch (e: any) { toast.error(e.message || "Failed"); }
+    finally { setBusy(false); }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Mark paid — {bill.name}</DialogTitle></DialogHeader>
+        <div className="space-y-2 text-sm">
+          <div className="text-xs text-muted-foreground">{bill.recurring ? "Marks current month occurrence only. Future months stay unpaid." : "Marks this bill as paid."}</div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>Paid date</Label><Input type="date" value={f.paid_date} onChange={(e) => setF({ ...f, paid_date: e.target.value })} /></div>
+            <div><Label>Paid from</Label>
+              <Select value={f.paid_from} onValueChange={(v) => setF({ ...f, paid_from: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="business">Business wallet / bank</SelectItem>
+                  <SelectItem value="personal">Personal wallet / bank</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2"><Label>Payment method</Label>
+              <Select value={f.payment_method} onValueChange={(v) => setF({ ...f, payment_method: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{["cash", "card", "bank_transfer", "zelle", "cashapp", "check", "other"].map((m) => <SelectItem key={m} value={m}>{m.replace("_", " ")}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2"><Label>Notes</Label><Input value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" onClick={() => onClose()}>Cancel</Button>
+            <Button onClick={save} disabled={busy} className="bg-success text-success-foreground hover:bg-success/90">Mark Paid</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
