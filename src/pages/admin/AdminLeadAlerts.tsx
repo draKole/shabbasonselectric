@@ -29,6 +29,7 @@ export default function AdminLeadAlerts() {
   useEffect(() => {
     (supabase as any).from("lead_alert_log").select("*").order("sent_at", { ascending: false }).limit(20)
       .then(({ data }: any) => setLogs(data || []));
+    loadDiag();
   }, [settings]);
 
   if (isLoading || !form) return <div className="container-tight py-6">Loading…</div>;
