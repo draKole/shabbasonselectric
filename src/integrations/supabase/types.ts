@@ -115,6 +115,7 @@ export type Database = {
       }
       bill_occurrences: {
         Row: {
+          affects_live_cash: boolean
           amount: number
           bill_id: string
           created_at: string
@@ -130,6 +131,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          affects_live_cash?: boolean
           amount?: number
           bill_id: string
           created_at?: string
@@ -145,6 +147,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          affects_live_cash?: boolean
           amount?: number
           bill_id?: string
           created_at?: string
@@ -171,6 +174,7 @@ export type Database = {
       }
       bills: {
         Row: {
+          affects_live_cash: boolean
           amount: number
           bill_type: string
           category: string
@@ -180,13 +184,16 @@ export type Database = {
           name: string
           notes: string | null
           paid: boolean
+          paid_from: string | null
           paid_on: string | null
+          payment_method: string | null
           priority: string
           recurring: boolean
           recurring_frequency: string | null
           updated_at: string
         }
         Insert: {
+          affects_live_cash?: boolean
           amount?: number
           bill_type?: string
           category?: string
@@ -196,13 +203,16 @@ export type Database = {
           name: string
           notes?: string | null
           paid?: boolean
+          paid_from?: string | null
           paid_on?: string | null
+          payment_method?: string | null
           priority?: string
           recurring?: boolean
           recurring_frequency?: string | null
           updated_at?: string
         }
         Update: {
+          affects_live_cash?: boolean
           amount?: number
           bill_type?: string
           category?: string
@@ -212,7 +222,9 @@ export type Database = {
           name?: string
           notes?: string | null
           paid?: boolean
+          paid_from?: string | null
           paid_on?: string | null
+          payment_method?: string | null
           priority?: string
           recurring?: boolean
           recurring_frequency?: string | null
@@ -312,6 +324,39 @@ export type Database = {
           },
         ]
       }
+      cash_reconciliations: {
+        Row: {
+          account_name: string | null
+          account_type: Database["public"]["Enums"]["cash_account_type"]
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          reconciled_balance: number
+          reconciliation_date: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_type: Database["public"]["Enums"]["cash_account_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          reconciled_balance?: number
+          reconciliation_date?: string
+        }
+        Update: {
+          account_name?: string | null
+          account_type?: Database["public"]["Enums"]["cash_account_type"]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          reconciled_balance?: number
+          reconciliation_date?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -368,30 +413,36 @@ export type Database = {
       }
       debt_payments: {
         Row: {
+          affects_live_cash: boolean
           amount: number
           created_at: string
           debt_id: string
           id: string
           method: string
           notes: string | null
+          paid_from: string | null
           paid_on: string
         }
         Insert: {
+          affects_live_cash?: boolean
           amount?: number
           created_at?: string
           debt_id: string
           id?: string
           method?: string
           notes?: string | null
+          paid_from?: string | null
           paid_on?: string
         }
         Update: {
+          affects_live_cash?: boolean
           amount?: number
           created_at?: string
           debt_id?: string
           id?: string
           method?: string
           notes?: string | null
+          paid_from?: string | null
           paid_on?: string
         }
         Relationships: [
@@ -2222,6 +2273,17 @@ export type Database = {
         }
         Relationships: []
       }
+      v_bill_month_totals: {
+        Row: {
+          business_bills_remaining: number | null
+          paid_this_month: number | null
+          past_due_unpaid: number | null
+          personal_bills_remaining: number | null
+          remaining_this_month: number | null
+          total_monthly_bills: number | null
+        }
+        Relationships: []
+      }
       v_business_assigned: {
         Row: {
           assigned_total: number | null
@@ -2233,12 +2295,21 @@ export type Database = {
           bills_out: number | null
           debt_out: number | null
           historical_in: number | null
+          is_reconciled: boolean | null
           live_cash: number | null
           materials_out: number | null
           payments_in: number | null
+          reconciled_balance: number | null
+          reconciliation_date: string | null
           transfers_out: number | null
           voucher_cash_in: number | null
           worker_pay_out: number | null
+        }
+        Relationships: []
+      }
+      v_open_job_balances: {
+        Row: {
+          open_balance: number | null
         }
         Relationships: []
       }
@@ -2252,9 +2323,13 @@ export type Database = {
         Row: {
           bills_out: number | null
           debt_out: number | null
+          is_reconciled: boolean | null
           live_cash: number | null
+          owner_worker_pay_in: number | null
           personal_exp_out: number | null
           personal_income_in: number | null
+          reconciled_balance: number | null
+          reconciliation_date: string | null
           transfers_in: number | null
         }
         Relationships: []
@@ -2268,6 +2343,7 @@ export type Database = {
     }
     Functions: {
       claim_first_admin: { Args: never; Returns: boolean }
+      fix_bill_occurrences: { Args: { _today?: string }; Returns: Json }
       get_estimate_by_token: { Args: { _token: string }; Returns: Json }
       has_role: {
         Args: {
@@ -2281,12 +2357,17 @@ export type Database = {
         Returns: boolean
       }
       my_worker_id: { Args: never; Returns: string }
+      recompute_all_debt_balances: { Args: never; Returns: number }
       recompute_all_job_balances: { Args: never; Returns: number }
       recompute_debt_balance: { Args: { _debt_id: string }; Returns: undefined }
       recompute_job_totals: { Args: { _job_id: string }; Returns: undefined }
       recompute_job_worker_labor: {
         Args: { _job_id: string }
         Returns: undefined
+      }
+      reverse_allocation_batch: {
+        Args: { _allocation_id: string; _note?: string }
+        Returns: boolean
       }
     }
     Enums: {
@@ -2303,6 +2384,7 @@ export type Database = {
         | "follow_up"
         | "final_walkthrough"
         | "other"
+      cash_account_type: "business" | "personal"
       contact_method: "call" | "text" | "email"
       customer_type:
         | "homeowner"
@@ -2515,6 +2597,7 @@ export const Constants = {
         "final_walkthrough",
         "other",
       ],
+      cash_account_type: ["business", "personal"],
       contact_method: ["call", "text", "email"],
       customer_type: [
         "homeowner",

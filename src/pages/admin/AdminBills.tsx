@@ -70,9 +70,9 @@ export default function AdminBills() {
   }
   async function regenerateOccurrences() {
     try {
-      await supabase.functions.invoke("generate-bill-occurrences", { body: {} });
+      const { data } = await supabase.functions.invoke("generate-bill-occurrences", { body: {} });
       try { localStorage.removeItem("bill_occ_lastgen"); } catch {}
-      toast.success("Refreshed monthly bills");
+      toast.success(`Created ${data?.created || 0} missing occurrences, fixed ${data?.fixed || 0} stale statuses, ${data?.already_existed || 0} already existed.`);
       load();
     } catch (e: any) { toast.error(e?.message || "Failed"); }
   }
@@ -128,14 +128,12 @@ export default function AdminBills() {
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
   const ymStart = monthStart.toISOString().slice(0, 10);
   const ymEnd = monthEnd.toISOString().slice(0, 10);
-  const inMonth = bills.filter((b) => b.due_date && b.due_date >= ymStart && b.due_date <= ymEnd);
-  const totalMonth = inMonth.reduce((s, b) => s + Number(b.amount), 0);
-  // Paid this month = bills marked paid whose paid_on falls inside this month (regardless of due_date)
-  const paidMonth = bills.filter((b) => b.paid && b.paid_on && b.paid_on >= ymStart && b.paid_on <= ymEnd).reduce((s, b) => s + Number(b.amount), 0);
-  // Remaining = unpaid due this month + ALL past-due unpaid (carry over until paid)
-  const pastDue = bills.filter((b) => !b.paid && b.due_date && b.due_date < ymStart);
-  const unpaidThisMonth = inMonth.filter((b) => !b.paid).reduce((s, b) => s + Number(b.amount), 0);
-  const pastDueAmt = pastDue.reduce((s, b) => s + Number(b.amount), 0);
+  const currentOccs = occurrences.filter((o) => o.period_month === currentMonth);
+  const totalMonth = currentOccs.reduce((s, o) => s + Number(o.amount), 0);
+  const paidMonth = occurrences.filter((o) => o.paid && o.paid_on && o.paid_on >= ymStart && o.paid_on <= ymEnd).reduce((s, o) => s + Number(o.paid_amount || o.amount || 0), 0);
+  const pastDue = occurrences.filter((o) => !o.paid && o.due_date && o.due_date < ymStart);
+  const unpaidThisMonth = currentOccs.filter((o) => !o.paid).reduce((s, o) => s + Number(o.amount), 0);
+  const pastDueAmt = pastDue.reduce((s, o) => s + Number(o.amount), 0);
   const remainingMonth = unpaidThisMonth + pastDueAmt;
   const critical = bills.filter((b) => !b.paid && b.priority === "critical");
 
@@ -276,9 +274,9 @@ export default function AdminBills() {
 }
 
 function MarkPaidDialog({ payDialog, onClose }: { payDialog: { bill: Bill; occ: any | null } | null; onClose: (refresh?: boolean) => void }) {
-  const [f, setF] = useState<{ paid_date: string; paid_from: string; payment_method: string; notes: string }>({
+  const [f, setF] = useState<{ paid_date: string; paid_from: string; payment_method: string; notes: string; affects_live_cash: boolean }>({
     paid_date: new Date().toISOString().slice(0, 10),
-    paid_from: "business", payment_method: "cash", notes: "",
+    paid_from: "business", payment_method: "cash", notes: "", affects_live_cash: true,
   });
   const [busy, setBusy] = useState(false);
 
@@ -286,7 +284,7 @@ function MarkPaidDialog({ payDialog, onClose }: { payDialog: { bill: Bill; occ: 
     if (payDialog) setF({
       paid_date: new Date().toISOString().slice(0, 10),
       paid_from: payDialog.bill.bill_type || "business",
-      payment_method: "cash", notes: "",
+      payment_method: "cash", notes: "", affects_live_cash: true,
     });
   }, [payDialog]);
 
@@ -303,16 +301,16 @@ function MarkPaidDialog({ payDialog, onClose }: { payDialog: { bill: Bill; occ: 
           await (supabase as any).from("bill_occurrences").insert({
             bill_id: bill.id, period_month: period, amount: bill.amount,
             paid: true, paid_on: f.paid_date, paid_amount: bill.amount,
-            paid_from: f.paid_from, payment_method: f.payment_method, notes: f.notes || null,
+            paid_from: f.paid_from, payment_method: f.payment_method, notes: f.notes || null, affects_live_cash: f.affects_live_cash,
           });
         } else {
           await (supabase as any).from("bill_occurrences").update({
             paid: true, paid_on: f.paid_date, paid_amount: Number(bill.amount),
-            paid_from: f.paid_from, payment_method: f.payment_method, notes: f.notes || null,
+            paid_from: f.paid_from, payment_method: f.payment_method, notes: f.notes || null, affects_live_cash: f.affects_live_cash,
           }).eq("id", occ.id);
         }
       } else {
-        await supabase.from("bills").update({ paid: true, paid_on: f.paid_date } as any).eq("id", bill.id);
+        await supabase.from("bills").update({ paid: true, paid_on: f.paid_date, paid_from: f.paid_from, payment_method: f.payment_method, affects_live_cash: f.affects_live_cash } as any).eq("id", bill.id);
       }
       toast.success("Marked paid");
       onClose(true);
@@ -344,6 +342,10 @@ function MarkPaidDialog({ payDialog, onClose }: { payDialog: { bill: Bill; occ: 
               </Select>
             </div>
             <div className="col-span-2"><Label>Notes</Label><Input value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>
+            <label className="col-span-2 flex items-center justify-between rounded-md border border-border p-3 cursor-pointer">
+              <span className="text-sm">Already paid before cash reset / do not affect live cash</span>
+              <Switch checked={!f.affects_live_cash} onCheckedChange={(v) => setF({ ...f, affects_live_cash: !v })} />
+            </label>
           </div>
           <div className="flex gap-2 justify-end">
             <Button variant="outline" onClick={() => onClose()}>Cancel</Button>

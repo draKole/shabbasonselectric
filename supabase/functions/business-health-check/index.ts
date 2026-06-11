@@ -75,6 +75,44 @@ Deno.serve(async (req) => {
     const dangling = (alloc || []).filter((a: any) => a.status === "transferred" && !txSet.has(a.id));
     findings.push({ severity: dangling.length ? "warn" : "info", code: "alloc_transferred_no_txn", title: "Allocations marked transferred but no transfer record", count: dangling.length });
 
+    // 9. Cash reconciliation and fake-cash risks
+    const { data: recs } = await admin.from("cash_reconciliations").select("account_type, reconciliation_date").order("reconciliation_date", { ascending: false });
+    const bizRec = (recs || []).find((r: any) => r.account_type === "business");
+    const perRec = (recs || []).find((r: any) => r.account_type === "personal");
+    findings.push({ severity: bizRec ? "info" : "error", code: "business_cash_not_reconciled", title: "Business live cash has not been reconciled", count: bizRec ? 0 : 1 });
+    findings.push({ severity: perRec ? "info" : "error", code: "personal_cash_not_reconciled", title: "Personal live cash has not been reconciled", count: perRec ? 0 : 1 });
+    const { data: preAlloc } = await admin.from("allocations").select("id").in("status", ["assigned", "allocated"]).lt("period_week", bizRec?.reconciliation_date || "9999-12-31");
+    findings.push({ severity: preAlloc?.length ? "error" : "info", code: "allocation_before_reconciliation", title: "Allocation exists from unreconciled cash", count: preAlloc?.length || 0, detail: preAlloc?.length ? "Reverse the bad allocation batch." : undefined });
+    const { data: bizCash } = await admin.from("v_business_live_cash").select("live_cash").maybeSingle();
+    const pendingOwner = (alloc || []).filter((a: any) => ["assigned", "allocated"].includes(a.status)).reduce((s: number, a: any) => s + Number(a.owner_pay_amount || 0), 0);
+    findings.push({ severity: pendingOwner > 0 && Number(bizCash?.live_cash || 0) <= 0 ? "error" : "info", code: "pending_owner_pay_no_cash", title: "Pending owner pay exists but business live cash is $0", count: pendingOwner > 0 && Number(bizCash?.live_cash || 0) <= 0 ? 1 : 0 });
+
+    // 10. Bill occurrence correctness
+    const { data: dupOcc } = await admin
+      .from("bill_occurrences")
+      .select("bill_id, period_month");
+    const duplicateKeys = new Set<string>();
+    const seenKeys = new Set<string>();
+    (dupOcc || []).forEach((o: any) => {
+      const key = `${o.bill_id}:${o.period_month}`;
+      if (seenKeys.has(key)) duplicateKeys.add(key);
+      seenKeys.add(key);
+    });
+    findings.push({ severity: duplicateKeys.size ? "warn" : "info", code: "duplicate_bill_occurrences", title: "Duplicate bill occurrences", count: duplicateKeys.size });
+    const { data: badPaidOcc } = await admin.from("bill_occurrences").select("id").eq("paid", true).or("paid_on.is.null,paid_from.is.null,payment_method.is.null");
+    findings.push({ severity: badPaidOcc?.length ? "warn" : "info", code: "bill_paid_missing_cash_fields", title: "Bill paid but missing cash source/payment details", count: badPaidOcc?.length || 0 });
+
+    // 11. Debt balances match payments
+    const { data: debts } = await admin.from("debts").select("id, starting_balance, current_balance");
+    const { data: debtPays } = await admin.from("debt_payments").select("debt_id, amount, paid_from");
+    const wrongDebt = (debts || []).filter((d: any) => {
+      const paid = (debtPays || []).filter((p: any) => p.debt_id === d.id).reduce((s: number, p: any) => s + Number(p.amount || 0), 0);
+      return Math.abs(Number(d.current_balance || 0) - Math.max(Number(d.starting_balance || 0) - paid, 0)) > 0.01;
+    });
+    findings.push({ severity: wrongDebt.length ? "warn" : "info", code: "debt_balance_mismatch", title: "Debt payment not reducing debt balance correctly", count: wrongDebt.length });
+    const debtMissingCashSource = (debtPays || []).filter((p: any) => !p.paid_from);
+    findings.push({ severity: debtMissingCashSource.length ? "warn" : "info", code: "debt_payment_missing_cash_source", title: "Debt payment missing business/personal cash source", count: debtMissingCashSource.length });
+
     return json({ ok: true, findings, ran_at: new Date().toISOString() });
   } catch (e) {
     return json({ error: (e as Error).message }, 500);

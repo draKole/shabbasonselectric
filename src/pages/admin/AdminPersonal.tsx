@@ -14,6 +14,7 @@ import { useBillsTotals, useDebtTotals } from "@/lib/useBillsTotals";
 import { useGlobalSettings, num } from "@/lib/useGlobalSettings";
 import { usePersonalExpenses, PERSONAL_EXPENSE_CATEGORIES, PERSONAL_INCOME_CATEGORIES } from "@/lib/usePersonalExpenses";
 import { useLiveCash, fmtMoney as fmt } from "@/lib/useLiveCash";
+import { CashReconciliationCard, ReconciliationWarning } from "@/components/admin/CashReconciliationCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -71,6 +72,8 @@ export default function AdminPersonal() {
       {/* LIVE CASH */}
       <section className="space-y-2">
         <h2 className="font-bold text-sm uppercase text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4" />Live Cash</h2>
+        <ReconciliationWarning show={!!live.per && !live.per.is_reconciled} />
+        {live.per?.is_reconciled && live.per.live_cash < 0 && <Card className="p-3 text-sm border-destructive/40 bg-destructive/5 text-destructive">Cash mismatch detected: spending exceeds logged income after reconciliation. Add income/owner transfer or set a new cash reconciliation.</Card>}
         {!live.per ? <Card className="p-4 text-sm text-muted-foreground">Loading…</Card> : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat icon={<Wallet className="h-5 w-5" />} label="Personal Live Cash" value={fmt(live.per.live_cash)} highlight />
@@ -84,6 +87,8 @@ export default function AdminPersonal() {
           </div>
         )}
       </section>
+
+      <CashReconciliationCard accountType="personal" currentBalance={live.per?.live_cash || 0} reconciliationDate={live.per?.reconciliation_date} onDone={live.reload} />
 
       <PersonalAssignmentsPanel onDone={live.reload} />
 
