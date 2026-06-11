@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,17 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Link } from "react-router-dom";
-import { DollarSign, Receipt, CreditCard, TrendingUp, Plus, Trash2 } from "lucide-react";
+import { DollarSign, Receipt, CreditCard, TrendingUp, Plus, Trash2, Wallet, ArrowRightLeft, PieChart } from "lucide-react";
 import { useMonthMoney, monthRange } from "@/lib/useMonthMoney";
 import { useBillsTotals, useDebtTotals } from "@/lib/useBillsTotals";
-import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
 import { useGlobalSettings, num } from "@/lib/useGlobalSettings";
 import { usePersonalExpenses, PERSONAL_EXPENSE_CATEGORIES, PERSONAL_INCOME_CATEGORIES } from "@/lib/usePersonalExpenses";
+import { useLiveCash, fmtMoney as fmt } from "@/lib/useLiveCash";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-function fmt(n: number) { return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }); }
+const PERSONAL_ASSIGN = ["Bills", "Debt", "Emergency", "Car / Transportation", "Savings", "Investing", "Spending", "Other"];
 
 export default function AdminPersonal() {
   const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
@@ -25,9 +26,9 @@ export default function AdminPersonal() {
   const month = useMonthMoney(mr.from, mr.to);
   const bills = useBillsTotals(mr.from, mr.to, "personal");
   const debt = useDebtTotals("personal", mr.from, mr.to);
-  const { presets, active } = useAllocationPresets("personal");
   const { settings } = useGlobalSettings();
   const exp = usePersonalExpenses(mr.from, mr.to);
+  const live = useLiveCash();
 
   const ownerPay = month.ownerPay;
   const ownerDraw = exp.ownerDraw;
@@ -35,44 +36,30 @@ export default function AdminPersonal() {
   const personalIncome = ownerPay + ownerDraw + otherIncome;
   const taxReserve = personalIncome * num(settings.personal_tax_reserve_pct) / 100;
   const remainingCash = personalIncome - bills.paid - debt.paidThisMonth - exp.totalExpenses;
-  const allocBase = Math.max(personalIncome - taxReserve, 0);
-  const preset = active || presets[0];
 
-  // Form
   const [form, setForm] = useState({
     expense_date: new Date().toISOString().slice(0, 10),
-    amount: "",
-    category: "Food",
-    method: "cash",
-    notes: "",
-    recurring: false,
-    is_income: false,
+    amount: "", category: "Food", method: "cash", notes: "", recurring: false, is_income: false,
   });
+  const categories = form.is_income ? PERSONAL_INCOME_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
 
   async function addExpense() {
     if (!form.amount) return toast.error("Enter an amount");
     const { error } = await (supabase as any).from("personal_expenses").insert({
-      expense_date: form.expense_date,
-      amount: Number(form.amount),
-      category: form.category,
-      method: form.method,
-      notes: form.notes || null,
-      recurring: form.recurring,
-      is_income: form.is_income,
+      expense_date: form.expense_date, amount: Number(form.amount), category: form.category, method: form.method,
+      notes: form.notes || null, recurring: form.recurring, is_income: form.is_income,
     });
     if (error) return toast.error(error.message);
     toast.success(form.is_income ? "Income logged" : "Expense logged");
     setForm({ ...form, amount: "", notes: "" });
-    exp.reload();
+    exp.reload(); live.reload();
   }
 
   async function delItem(id: string) {
     if (!confirm("Delete this entry?")) return;
     await (supabase as any).from("personal_expenses").delete().eq("id", id);
-    exp.reload();
+    exp.reload(); live.reload();
   }
-
-  const categories = form.is_income ? PERSONAL_INCOME_CATEGORIES : PERSONAL_EXPENSE_CATEGORIES;
 
   return (
     <div className="container-tight py-6 space-y-4">
@@ -81,35 +68,42 @@ export default function AdminPersonal() {
         <p className="text-sm text-muted-foreground">Your owner pay, draws, and personal money. Business cash is in <Link to="/admin/business" className="underline">Business</Link>.</p>
       </div>
 
+      {/* LIVE CASH */}
       <section className="space-y-2">
-        <h2 className="font-bold text-sm uppercase text-muted-foreground">Money In</h2>
+        <h2 className="font-bold text-sm uppercase text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4" />Live Cash</h2>
+        {!live.per ? <Card className="p-4 text-sm text-muted-foreground">Loading…</Card> : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat icon={<Wallet className="h-5 w-5" />} label="Personal Live Cash" value={fmt(live.per.live_cash)} highlight />
+            <Stat icon={<PieChart className="h-5 w-5" />} label="Assigned (not spent)" value={fmt(live.per.assigned)} />
+            <Stat icon={<Wallet className="h-5 w-5" />} label="Unassigned available" value={fmt(live.per.unassigned)} />
+            <Stat icon={<ArrowRightLeft className="h-5 w-5" />} label="Owner pay received" value={fmt(live.per.transfers_in)} sub="From business" />
+            <Stat icon={<DollarSign className="h-5 w-5" />} label="Other personal income" value={fmt(live.per.personal_income_in)} />
+            <Stat icon={<Receipt className="h-5 w-5" />} label="Personal bills paid (cash)" value={fmt(live.per.bills_out)} />
+            <Stat icon={<CreditCard className="h-5 w-5" />} label="Personal debt paid (cash)" value={fmt(live.per.debt_out)} />
+            <Stat icon={<Receipt className="h-5 w-5" />} label="Personal expenses" value={fmt(live.per.personal_exp_out)} />
+          </div>
+        )}
+      </section>
+
+      <PersonalAssignmentsPanel onDone={live.reload} />
+
+      {/* This month */}
+      <section className="space-y-2 pt-4 border-t border-border">
+        <h2 className="font-bold text-sm uppercase text-muted-foreground">This Month</h2>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat icon={<DollarSign className="h-5 w-5" />} label="Owner pay (this month)" value={fmt(ownerPay)} sub="From hours worked on jobs" />
-          <Stat icon={<DollarSign className="h-5 w-5" />} label="Owner draw" value={fmt(ownerDraw)} sub="Money taken from business" />
-          <Stat icon={<DollarSign className="h-5 w-5" />} label="Other personal income" value={fmt(otherIncome)} />
+          <Stat icon={<DollarSign className="h-5 w-5" />} label="Owner pay" value={fmt(ownerPay)} sub="From hours worked" />
+          <Stat icon={<DollarSign className="h-5 w-5" />} label="Owner draw" value={fmt(ownerDraw)} sub="Logged draws" />
+          <Stat icon={<DollarSign className="h-5 w-5" />} label="Other income" value={fmt(otherIncome)} />
           <Stat icon={<DollarSign className="h-5 w-5" />} label="Total personal income" value={fmt(personalIncome)} highlight />
+          <Stat icon={<Receipt className="h-5 w-5" />} label="Bills paid" value={fmt(bills.paid)} />
+          <Stat icon={<Receipt className="h-5 w-5" />} label="Bills remaining" value={fmt(bills.remaining)} sub={bills.pastDue > 0 ? `${fmt(bills.pastDue)} past due` : undefined} />
+          <Stat icon={<CreditCard className="h-5 w-5" />} label="Debt paid" value={fmt(debt.paidThisMonth)} sub={`Remaining: ${fmt(debt.remaining)}`} />
+          <Stat icon={<TrendingUp className="h-5 w-5" />} label="Cash remaining (month)" value={fmt(remainingCash)} />
         </div>
+        <div className="text-xs text-muted-foreground">Personal tax reserve: {fmt(taxReserve)} ({settings.personal_tax_reserve_pct || 0}%)</div>
       </section>
 
-      <section className="space-y-2">
-        <h2 className="font-bold text-sm uppercase text-muted-foreground">Money Out</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Stat icon={<Receipt className="h-5 w-5" />} label="Personal bills paid" value={fmt(bills.paid)} />
-          <Stat icon={<Receipt className="h-5 w-5" />} label="Personal bills remaining" value={fmt(bills.remaining)} sub={bills.pastDue > 0 ? `${fmt(bills.pastDue)} past due` : undefined} />
-          <Stat icon={<Receipt className="h-5 w-5" />} label="Personal expenses logged" value={fmt(exp.totalExpenses)} />
-          <Stat icon={<CreditCard className="h-5 w-5" />} label="Personal debt paid" value={fmt(debt.paidThisMonth)} sub={`Remaining: ${fmt(debt.remaining)}`} />
-        </div>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="font-bold text-sm uppercase text-muted-foreground">Cash & Reserves</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <Stat icon={<TrendingUp className="h-5 w-5" />} label="Personal cash remaining" value={fmt(remainingCash)} sub="Income − bills − debt − expenses" highlight />
-          <Stat icon={<DollarSign className="h-5 w-5" />} label="Personal tax reserve" value={fmt(taxReserve)} sub={`${settings.personal_tax_reserve_pct || 0}% of income — set aside`} />
-        </div>
-      </section>
-
-      {/* Personal Expense Logger */}
+      {/* Logger */}
       <Card className="p-5 space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-bold flex items-center gap-2"><Plus className="h-4 w-4" /> Log Personal Expense or Income</h2>
@@ -143,8 +137,6 @@ export default function AdminPersonal() {
           <div className="sm:col-span-2 lg:col-span-3"><Label>Notes</Label><Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} /></div>
         </div>
         <Button onClick={addExpense} className="w-full">Add {form.is_income ? "Income" : "Expense"}</Button>
-
-        {/* Recent list */}
         <div className="pt-3 border-t border-border">
           <div className="text-sm font-semibold mb-2">This month ({exp.items.length})</div>
           <div className="space-y-1 max-h-72 overflow-y-auto">
@@ -165,27 +157,88 @@ export default function AdminPersonal() {
           </div>
         </div>
       </Card>
-
-      <Card className="p-5">
-        <h2 className="font-bold mb-1">Personal Allocations</h2>
-        <p className="text-xs text-muted-foreground mb-3">Splits <b>personal income after tax reserve ({fmt(allocBase)})</b>. Edit in <Link to="/admin/settings" className="underline">Settings</Link>.</p>
-        {allocBase <= 0 && <div className="text-sm text-muted-foreground p-3 rounded bg-muted">No personal income available to allocate.</div>}
-        {allocBase > 0 && preset && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {preset.buckets.filter((b: any) => b.enabled !== false).map((b: any, i: number) => (
-              <div key={i} className={`rounded-md p-3 ${bucketColorClass(b.color)}`}>
-                <div className="text-xs font-semibold">{b.name} ({b.percent}%)</div>
-                <div className="text-xl font-extrabold">{fmt(allocBase * (Number(b.percent) || 0) / 100)}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      <Card className="p-4 text-xs text-muted-foreground">
-        Personal expenses, debt, and bills do not reduce business profit. Pay them from owner pay or owner draw.
-      </Card>
     </div>
+  );
+}
+
+function PersonalAssignmentsPanel({ onDone }: { onDone: () => void }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ category: PERSONAL_ASSIGN[0], amount: "", notes: "" });
+  const [busy, setBusy] = useState(false);
+
+  async function load() {
+    const { data } = await (supabase as any).from("personal_assignments").select("*").order("created_at", { ascending: false });
+    setItems(data || []);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function add() {
+    if (!f.amount) return toast.error("Amount required");
+    setBusy(true);
+    // map category → allowed target_type
+    const targetType = f.category === "Bills" ? "bill_occurrence" : f.category === "Debt" ? "debt" : f.category === "Emergency" ? "emergency" : "other";
+    const { error } = await (supabase as any).from("personal_assignments").insert({
+      target_type: targetType, amount: Number(f.amount), notes: `${f.category}${f.notes ? ` — ${f.notes}` : ""}`, status: "assigned",
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Assigned");
+    setF({ ...f, amount: "", notes: "" }); setOpen(false);
+    load(); onDone();
+  }
+  async function setStatus(id: string, status: string) {
+    await (supabase as any).from("personal_assignments").update({ status }).eq("id", id);
+    load(); onDone();
+  }
+  async function del(id: string) {
+    if (!confirm("Delete this assignment?")) return;
+    await (supabase as any).from("personal_assignments").delete().eq("id", id);
+    load(); onDone();
+  }
+
+  return (
+    <Card className="p-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="font-bold flex items-center gap-2"><PieChart className="h-4 w-4" />Personal Assignments</h3>
+        <Button size="sm" onClick={() => setOpen(true)} className="gap-1"><Plus className="h-4 w-4" />Assign</Button>
+      </div>
+      <p className="text-xs text-muted-foreground">Assigned money reduces Unassigned cash but stays in Live Cash until spent.</p>
+      <div className="space-y-1 max-h-64 overflow-y-auto">
+        {items.map((it) => (
+          <div key={it.id} className="flex items-center justify-between gap-2 border-b border-border py-1.5 text-sm">
+            <div className="min-w-0">
+              <div className="font-semibold">{fmt(Number(it.amount))} <span className="text-xs text-muted-foreground">· {it.target_type}</span></div>
+              <div className="text-xs text-muted-foreground">{it.notes}</div>
+            </div>
+            <div className="flex items-center gap-1">
+              <Select value={it.status} onValueChange={(v) => setStatus(it.id, v)}>
+                <SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>{["assigned", "paid", "spent"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+              </Select>
+              <Button size="sm" variant="ghost" onClick={() => del(it.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && <div className="text-xs text-muted-foreground p-2">No assignments yet.</div>}
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Assign personal money</DialogTitle></DialogHeader>
+          <div className="space-y-2 text-sm">
+            <div><Label>Category</Label>
+              <Select value={f.category} onValueChange={(v) => setF({ ...f, category: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PERSONAL_ASSIGN.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Amount</Label><Input type="number" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} /></div>
+            <div><Label>Notes</Label><Input value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>
+            <div className="flex gap-2 justify-end"><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={add} disabled={busy}>Assign</Button></div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 }
 
