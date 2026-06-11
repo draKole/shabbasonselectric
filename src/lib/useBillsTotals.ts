@@ -13,16 +13,13 @@ export function useBillsTotals(from: string, to: string, type?: "business" | "pe
   const [t, setT] = useState<BillsTotals>({ paid: 0, remaining: 0, pastDue: 0, unpaidThisMonth: 0, loading: true });
   useEffect(() => {
     (async () => {
-      let q = supabase.from("bills").select("amount, due_date, paid, paid_on, bill_type");
-      if (type) q = q.eq("bill_type", type);
+      let q = (supabase as any).from("bill_occurrences").select("amount, due_date, paid, paid_on, bills!inner(bill_type)");
+      if (type) q = q.eq("bills.bill_type", type);
       const { data } = await q;
       const arr = (data || []) as any[];
-      const paid = arr.filter(b => b.paid && b.paid_on && b.paid_on >= from && b.paid_on <= to)
-        .reduce((s, b) => s + Number(b.amount || 0), 0);
-      const unpaidThisMonth = arr.filter(b => !b.paid && b.due_date && b.due_date >= from && b.due_date <= to)
-        .reduce((s, b) => s + Number(b.amount || 0), 0);
-      const pastDue = arr.filter(b => !b.paid && b.due_date && b.due_date < from)
-        .reduce((s, b) => s + Number(b.amount || 0), 0);
+      const paid = arr.filter(b => b.paid && b.paid_on && b.paid_on >= from && b.paid_on <= to).reduce((s, b) => s + Number(b.amount || 0), 0);
+      const unpaidThisMonth = arr.filter(b => !b.paid && b.due_date && b.due_date >= from && b.due_date <= to).reduce((s, b) => s + Number(b.amount || 0), 0);
+      const pastDue = arr.filter(b => !b.paid && b.due_date && b.due_date < from).reduce((s, b) => s + Number(b.amount || 0), 0);
       setT({ paid, remaining: unpaidThisMonth + pastDue, pastDue, unpaidThisMonth, loading: false });
     })();
   }, [from, to, type]);

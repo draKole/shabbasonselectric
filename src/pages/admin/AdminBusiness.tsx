@@ -67,7 +67,7 @@ export default function AdminBusiness() {
 
       <div className="grid gap-3 md:grid-cols-2">
         <WeeklyAllocationCard unassigned={live.biz?.unassigned || 0} onDone={live.reload} />
-        <OwnerPayTransferCard onDone={live.reload} />
+        <OwnerPayTransferCard reconciliationDate={live.biz?.reconciliation_date || null} onDone={live.reload} />
       </div>
 
       <CashReconciliationCard accountType="business" currentBalance={live.biz?.live_cash || 0} reconciliationDate={live.biz?.reconciliation_date} onDone={live.reload} />
@@ -177,6 +177,7 @@ function WeeklyAllocationCard({ unassigned, onDone }: { unassigned: number; onDo
       <div className="text-sm text-muted-foreground">Unassigned business cash available: <b className="text-foreground">{fmt(unassigned)}</b></div>
       <div className="text-xs">Split: Owner Pay {ownerPct}% · Overhead {overheadPct}% · Reserve {reservePct}%</div>
       {existing && <div className="text-xs p-2 rounded bg-muted">Weekly allocation already exists for this period ({fmt(Number(existing.gross_amount))}).</div>}
+      {unassigned <= 0 && <div className="text-xs p-2 rounded bg-muted">No unassigned live cash available to allocate.</div>}
       <Button onClick={() => setOpen(true)} disabled={unassigned <= 0 || !!existing} className="w-full gap-1"><Plus className="h-4 w-4" />Run Weekly Allocation</Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -203,7 +204,7 @@ function Preview({ label, v }: { label: string; v: number }) {
   return <div className="rounded border border-border p-2"><div className="text-[10px] text-muted-foreground">{label}</div><div className="font-bold">{fmt(v)}</div></div>;
 }
 
-function OwnerPayTransferCard({ onDone }: { onDone: () => void }) {
+function OwnerPayTransferCard({ reconciliationDate, onDone }: { reconciliationDate: string | null; onDone: () => void }) {
   const [allocations, setAllocations] = useState<any[]>([]);
   const [transfers, setTransfers] = useState<any[]>([]);
   const [pick, setPick] = useState<any | null>(null);
@@ -224,9 +225,17 @@ function OwnerPayTransferCard({ onDone }: { onDone: () => void }) {
   function transferredFor(allocId: string) {
     return transfers.filter((t) => t.allocation_id === allocId).reduce((s, t) => s + Number(t.amount || 0), 0);
   }
-  const pending = allocations.filter((a) => a.status === "allocated" || a.status === "assigned").map((a) => ({
+  const pending = allocations.filter((a) => (a.status === "allocated" || a.status === "assigned") && (!reconciliationDate || a.period_week >= reconciliationDate)).map((a) => ({
     ...a, remaining: Math.max(0, Number(a.owner_pay_amount || 0) - transferredFor(a.id)),
   })).filter((a) => a.remaining > 0);
+  const reversible = allocations.filter((a) => (a.status === "allocated" || a.status === "assigned") && reconciliationDate && a.period_week < reconciliationDate);
+
+  async function reverseAllocation(id: string) {
+    const { error } = await (supabase as any).rpc("reverse_allocation_batch", { _allocation_id: id, _note: "Reversed because it was created before cash reconciliation" });
+    if (error) return toast.error(error.message);
+    toast.success("Allocation reversed");
+    load(); onDone();
+  }
 
   async function transfer() {
     if (!pick) return;
@@ -263,6 +272,15 @@ function OwnerPayTransferCard({ onDone }: { onDone: () => void }) {
             </div>
           ))}
         </div>}
+      {reversible.length > 0 && <div className="pt-2 border-t border-border space-y-1">
+        <div className="text-xs font-semibold">Void / Reverse Allocation Batch</div>
+        {reversible.slice(0, 5).map((a) => (
+          <div key={a.id} className="flex items-center justify-between gap-2 text-xs rounded bg-muted p-2">
+            <span>Week {a.period_week} · {fmt(Number(a.gross_amount))}</span>
+            <Button size="sm" variant="outline" onClick={() => reverseAllocation(a.id)}>Reverse</Button>
+          </div>
+        ))}
+      </div>}
       <Dialog open={!!pick} onOpenChange={(o) => !o && setPick(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Transfer owner pay</DialogTitle></DialogHeader>

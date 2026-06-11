@@ -24,39 +24,7 @@ Deno.serve(async (req) => {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { data: bills, error } = await admin
-    .from("bills")
-    .select("id, amount, due_date, recurring, recurring_frequency, created_at")
-    .eq("recurring", true);
-
+  const { data, error } = await admin.rpc("fix_bill_occurrences", {});
   if (error) return json({ ok: false, error: error.message }, 500);
-
-  const now = new Date();
-  const periods: string[] = [];
-  // generate current + previous 2 months catch-up
-  for (let i = 0; i < 3; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    periods.push(d.toISOString().slice(0, 10));
-  }
-
-  let created = 0;
-  for (const b of bills || []) {
-    for (const period of periods) {
-      const dueDay = b.due_date ? new Date(b.due_date as string).getUTCDate() : 1;
-      const periodDate = new Date(period + "T00:00:00Z");
-      const due = new Date(Date.UTC(periodDate.getUTCFullYear(), periodDate.getUTCMonth(), Math.min(dueDay, 28)));
-      const { error: insErr } = await admin
-        .from("bill_occurrences")
-        .insert({
-          bill_id: b.id,
-          period_month: period,
-          due_date: due.toISOString().slice(0, 10),
-          amount: b.amount,
-        });
-      if (!insErr) created++;
-      // unique violation = already exists, ignore
-    }
-  }
-
-  return json({ ok: true, processed: bills?.length || 0, created });
+  return json({ ok: true, ...(data as Record<string, unknown>) });
 });
