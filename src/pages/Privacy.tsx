@@ -1,9 +1,11 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 
+function _useTitle(t){ useEffect(()=>{const o=document.title;document.title=t;return()=>{document.title=o;};},[t]); }
 export default function Privacy() {
   return (
     <div className="container-tight py-10 prose prose-sm max-w-3xl">
-      <Helmet><title>Privacy Policy | Shabba & Sons Electric</title></Helmet>
+      {/*title*/}{_useTitle("Privacy Policy | Shabba & Sons Electric")}
+      
       <h1>Privacy Policy</h1>
       <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
 
