@@ -85,16 +85,41 @@ export default function AdminVouchers() {
             {filtered.length === 0 && <p className="text-sm text-muted-foreground p-3">No vouchers.</p>}
             {filtered.map(v => {
               const remain = Math.max(0, Number(v.credit_value) - Number(v.credit_used));
+              const hasRedemptions = redemptions.some(r => r.voucher_id === v.id);
+              async function setStatus(status: string, confirmMsg: string) {
+                if (!confirm(confirmMsg)) return;
+                const { error } = await (supabase as any).from("service_vouchers").update({ status }).eq("id", v.id);
+                if (error) return toast.error(error.message);
+                toast.success(`Voucher ${status}`);
+                reload();
+              }
+              async function hardDelete() {
+                if (hasRedemptions) { toast.error("Has redemptions — void or refund instead."); return; }
+                if (!confirm("Permanently delete this voucher? This cannot be undone.")) return;
+                const { error } = await (supabase as any).from("service_vouchers").delete().eq("id", v.id);
+                if (error) return toast.error(error.message);
+                toast.success("Voucher deleted");
+                reload();
+              }
+              const canHardDelete = !hasRedemptions && (v.status === "active");
               return (
-                <div key={v.id} className="py-3 flex items-center justify-between gap-3">
+                <div key={v.id} className="py-3 flex items-center justify-between gap-3 flex-wrap">
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{v.customer_name_snapshot || "—"} <span className="text-xs text-muted-foreground font-mono">{v.code}</span></div>
                     <div className="text-xs text-muted-foreground">Paid {fmt(v.amount_paid)} → Credit {fmt(v.credit_value)} · Used {fmt(v.credit_used)} · Remaining <b>{fmt(remain)}</b> · {v.purchase_date}{v.expires_on ? ` · expires ${v.expires_on}` : ""}</div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     <span className={`text-xs px-2 py-0.5 rounded ${v.status === "active" ? "bg-success/15 text-success" : v.status === "partial" ? "bg-secondary/15 text-secondary" : "bg-muted"}`}>{v.status}</span>
                     <Button size="sm" variant="ghost" onClick={() => setViewing(v)}>View</Button>
                     {(v.status === "active" || v.status === "partial") && <Button size="sm" variant="outline" onClick={() => setApplying(v)}>Apply</Button>}
+                    {(v.status === "active" || v.status === "partial") && (
+                      <>
+                        <Button size="sm" variant="outline" onClick={() => setStatus("void", "Void this voucher? It will no longer count as liability.")}>Void</Button>
+                        <Button size="sm" variant="outline" onClick={() => setStatus("cancelled", "Cancel this voucher?")}>Cancel</Button>
+                        <Button size="sm" variant="outline" onClick={() => setStatus("refunded", "Mark as refunded? Make sure you actually returned the money.")}>Refund</Button>
+                      </>
+                    )}
+                    {canHardDelete && <Button size="sm" variant="ghost" className="text-destructive" onClick={hardDelete}>Delete</Button>}
                   </div>
                 </div>
               );
