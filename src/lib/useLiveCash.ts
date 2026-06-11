@@ -36,22 +36,25 @@ export type PersonalCash = {
 export function useLiveCash() {
   const [biz, setBiz] = useState<BusinessCash | null>(null);
   const [per, setPer] = useState<PersonalCash | null>(null);
+  const [openJobBalance, setOpenJobBalance] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const reload = useCallback(async () => {
     setLoading(true);
-    const [b, p, ba, pa, vl] = await Promise.all([
+    const [b, p, ba, pa, vl, oj] = await Promise.all([
       (supabase as any).from("v_business_live_cash").select("*").maybeSingle(),
       (supabase as any).from("v_personal_live_cash").select("*").maybeSingle(),
       (supabase as any).from("v_business_assigned").select("*").maybeSingle(),
       (supabase as any).from("v_personal_assigned").select("*").maybeSingle(),
       (supabase as any).from("v_voucher_liability").select("*").maybeSingle(),
+      (supabase as any).from("v_open_job_balances").select("*").maybeSingle(),
     ]);
     const bizRow = b.data || {};
     const perRow = p.data || {};
     const bizAssigned = Number(ba.data?.assigned_total || 0);
     const perAssigned = Number(pa.data?.assigned_total || 0);
     const vLiab = Number(vl.data?.outstanding || 0);
+    setOpenJobBalance(Number(oj.data?.open_balance || 0));
     setBiz({
       live_cash: Number(bizRow.live_cash || 0),
       payments_in: Number(bizRow.payments_in || 0),
@@ -87,7 +90,7 @@ export function useLiveCash() {
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
-  return { biz, per, loading, reload };
+  return { biz, per, openJobBalance, loading, reload };
 }
 
 export function fmtMoney(n: number) {

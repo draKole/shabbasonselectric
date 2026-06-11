@@ -14,6 +14,7 @@ import { useAllocationPresets, bucketColorClass } from "@/lib/useAllocations";
 import { useGlobalSettings, num } from "@/lib/useGlobalSettings";
 import { usePersonalExpenses } from "@/lib/usePersonalExpenses";
 import { useLiveCash, fmtMoney as fmt, weekStart } from "@/lib/useLiveCash";
+import { CashReconciliationCard, ReconciliationWarning } from "@/components/admin/CashReconciliationCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -48,9 +49,11 @@ export default function AdminBusiness() {
       {/* LIVE CASH SECTION */}
       <section className="space-y-2">
         <h2 className="font-bold text-sm uppercase text-muted-foreground flex items-center gap-2"><Wallet className="h-4 w-4" /> Live Cash</h2>
+        <ReconciliationWarning show={live.biz && !live.biz.is_reconciled} />
         {!live.biz ? <Card className="p-4 text-sm text-muted-foreground">Loading…</Card> : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Stat icon={<Wallet className="h-5 w-5" />} label="Business Live Cash" value={fmt(live.biz.live_cash)} sub="Cash currently in business" highlight />
+            <Stat icon={<DollarSign className="h-5 w-5" />} label="Accounts Receivable / Open Job Balances" value={fmt(live.openJobBalance)} sub="Still owed, not cash" />
             <Stat icon={<PieChart className="h-5 w-5" />} label="Assigned (not spent)" value={fmt(live.biz.assigned)} />
             <Stat icon={<Wallet className="h-5 w-5" />} label="Unassigned available" value={fmt(live.biz.unassigned)} sub="Live cash − assigned" />
             <Stat icon={<Ticket className="h-5 w-5" />} label="Voucher liability" value={fmt(live.biz.voucher_liability)} sub="Owed in labor credit" />
@@ -66,6 +69,8 @@ export default function AdminBusiness() {
         <WeeklyAllocationCard unassigned={live.biz?.unassigned || 0} onDone={live.reload} />
         <OwnerPayTransferCard onDone={live.reload} />
       </div>
+
+      <CashReconciliationCard accountType="business" currentBalance={live.biz?.live_cash || 0} reconciliationDate={live.biz?.reconciliation_date} onDone={live.reload} />
 
       <BusinessAssignmentsPanel onDone={live.reload} />
 
