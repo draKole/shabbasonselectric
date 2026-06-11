@@ -49,6 +49,10 @@ import AdminVouchers from "./pages/admin/AdminVouchers";
 import AdminWorkerSavings from "./pages/admin/AdminWorkerSavings";
 import ServiceVouchers from "./pages/ServiceVouchers";
 import AdminLeadAlerts from "./pages/admin/AdminLeadAlerts";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import ServicePolicy from "./pages/ServicePolicy";
+import VoucherTerms from "./pages/VoucherTerms";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +74,10 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/careers" element={<Careers />} />
+              <Route path="/privacy-policy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/service-policy" element={<ServicePolicy />} />
+              <Route path="/voucher-terms" element={<VoucherTerms />} />
             </Route>
             <Route path="/estimate/:token" element={<EstimateShare />} />
             <Route path="/service-vouchers" element={<ServiceVouchers />} />
