@@ -49,6 +49,9 @@ import AdminVouchers from "./pages/admin/AdminVouchers";
 import AdminWorkerSavings from "./pages/admin/AdminWorkerSavings";
 import ServiceVouchers from "./pages/ServiceVouchers";
 import AdminLeadAlerts from "./pages/admin/AdminLeadAlerts";
+import AdminLeads from "./pages/admin/AdminLeads";
+import AdminLeadDetail from "./pages/admin/AdminLeadDetail";
+import AdminQuickLead from "./pages/admin/AdminQuickLead";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ServicePolicy from "./pages/ServicePolicy";
@@ -104,6 +107,9 @@ const App = () => (
               <Route path="debt" element={<AdminDebt />} />
               <Route path="contacts" element={<AdminContacts />} />
               <Route path="contacts/:id" element={<AdminContactDetail />} />
+              <Route path="leads" element={<AdminLeads />} />
+              <Route path="leads/new" element={<AdminQuickLead />} />
+              <Route path="leads/:id" element={<AdminLeadDetail />} />
               <Route path="workers" element={<AdminWorkers />} />
               <Route path="templates" element={<AdminTemplates />} />
               <Route path="reports" element={<AdminReports />} />
