@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   Calendar, FileText, KanbanSquare, LayoutDashboard, ListChecks, LogOut, Plus, Star,
   Briefcase, Image, Zap, DollarSign, Users, Settings, Receipt, CreditCard, BookUser,
-  HardHat, ClipboardList, BarChart3, Building2, User, FileSpreadsheet, Archive, Ticket, PiggyBank, MessageSquare,
+  HardHat, ClipboardList, BarChart3, Building2, User, FileSpreadsheet, Archive, Ticket, PiggyBank, MessageSquare, UserPlus,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { BUSINESS } from "@/lib/business";
@@ -48,6 +48,7 @@ const GROUPS: { label: string; items: { to: string; label: string; icon: any; en
   {
     label: "Growth",
     items: [
+      { to: "/admin/leads", label: "Leads", icon: UserPlus },
       { to: "/admin/estimates", label: "Estimates", icon: FileText },
       { to: "/admin/templates", label: "Templates", icon: ClipboardList },
       { to: "/admin/pipeline", label: "Pipeline", icon: KanbanSquare },
