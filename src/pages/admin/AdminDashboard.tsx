@@ -3,11 +3,13 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check, TrendingUp, Receipt, Users, ListChecks } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Briefcase, Calendar, CheckCircle2, DollarSign, FileText, Star, Copy, Check, TrendingUp, Receipt, Users, ListChecks, BellRing, Phone, MessageSquare } from "lucide-react";
 import { useAppSetting } from "@/lib/useAppSettings";
 import { useMonthMoney, monthRange } from "@/lib/useMonthMoney";
 import { useBillsTotals, useDebtTotals } from "@/lib/useBillsTotals";
 import { usePersonalExpenses } from "@/lib/usePersonalExpenses";
+import { useLeadFollowUps, getSectionLabel, getTypeOrder } from "@/lib/useLeadFollowUps";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -20,6 +22,7 @@ export default function AdminDashboard() {
   const { value: googleUrl } = useAppSetting("google_review_url");
   const monthKey = useMemo(() => new Date().toISOString().slice(0, 7), []);
   const mr = useMemo(() => monthRange(monthKey), [monthKey]);
+  const { items: followUpItems, loading: followUpsLoading, staleCount } = useLeadFollowUps();
   const money = useMonthMoney(mr.from, mr.to);
   const bizBills = useBillsTotals(mr.from, mr.to, "business");
   const personalBills = useBillsTotals(mr.from, mr.to, "personal");
@@ -111,7 +114,8 @@ export default function AdminDashboard() {
     { label: "Completed (month)", value: stats.completed, icon: CheckCircle2, color: "text-success" },
     { label: "Open estimates", value: stats.openEst, icon: FileText, color: "text-secondary" },
     { label: "Reviews needed", value: stats.reviewsNeeded, icon: Star, color: "text-accent-foreground" },
-    { label: "Open balance", value: `$${stats.openBalance.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+    { label: "Open balance", value: `${stats.openBalance.toFixed(0)}`, icon: DollarSign, color: "text-success" },
+    { label: "Stale follow-ups", value: staleCount, icon: BellRing, color: "text-secondary" },
   ];
 
   return (
@@ -129,6 +133,61 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Needs Attention Section */}
+      {followUpItems.length > 0 && (
+        <Card className="p-4 border-amber-200 bg-amber-50/30">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold flex items-center gap-2">
+              <BellRing className="h-4 w-4 text-secondary" /> Needs Attention
+            </h2>
+            <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-200">
+              {followUpItems.length} items
+            </Badge>
+          </div>
+          <div className="space-y-4">
+            {getTypeOrder().map((type) => {
+              const sectionItems = followUpItems.filter((i) => i.type === type);
+              if (sectionItems.length === 0) return null;
+              return (
+                <div key={type}>
+                  <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
+                    {getSectionLabel(type)} ({sectionItems.length})
+                  </h3>
+                  <div className="space-y-2">
+                    {sectionItems.map((item) => (
+                      <div key={item.id} className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-md border border-border bg-background">
+                        <Link to={item.link} className="min-w-0 flex-1 group">
+                          <div className="font-semibold group-hover:text-primary transition-colors">{item.customer_name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {item.service || "—"} · {item.days_since}d stale
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1 italic line-clamp-2">{item.message}</div>
+                        </Link>
+                        <div className="flex gap-2 flex-shrink-0">
+                          {item.phone && (
+                            <Button asChild size="sm" variant="outline">
+                              <a href={`tel:${item.phone}`}><Phone className="h-3.5 w-3.5" /></a>
+                            </Button>
+                          )}
+                          {item.phone && (
+                            <Button asChild size="sm" variant="outline">
+                              <a href={`sms:${item.phone}?&body=${encodeURIComponent(item.message)}`}>
+                                <MessageSquare className="h-3.5 w-3.5" />
+                              </a>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Card className="p-5">
         <div className="flex items-center justify-between mb-3">
