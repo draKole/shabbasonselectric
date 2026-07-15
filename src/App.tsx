@@ -47,6 +47,7 @@ import AdminPaystubs from "./pages/admin/AdminPaystubs";
 import AdminHistoricalIncome from "./pages/admin/AdminHistoricalIncome";
 import AdminVouchers from "./pages/admin/AdminVouchers";
 import AdminWorkerSavings from "./pages/admin/AdminWorkerSavings";
+import AdminCfoDashboard from "./pages/admin/AdminCfoDashboard";
 import ServiceVouchers from "./pages/ServiceVouchers";
 import AdminLeadAlerts from "./pages/admin/AdminLeadAlerts";
 import AdminLeads from "./pages/admin/AdminLeads";
@@ -113,6 +114,7 @@ const App = () => (
               <Route path="workers" element={<AdminWorkers />} />
               <Route path="templates" element={<AdminTemplates />} />
               <Route path="reports" element={<AdminReports />} />
+              <Route path="cfo" element={<AdminCfoDashboard />} />
               <Route path="paystubs" element={<AdminPaystubs />} />
               <Route path="historical-income" element={<AdminHistoricalIncome />} />
               <Route path="vouchers" element={<AdminVouchers />} />
