@@ -65,7 +65,7 @@ export default function AdminLeadDetail() {
   useEffect(() => {
     if (!id) return;
     (async () => {
-      const { data } = await supabase.from("leads").select("*").eq("id", id).single();
+      const { data } = await (supabase as any).from("leads").select("*").eq("id", id).single();
       if (data) {
         setLead(data);
         setStatus(data.status);
@@ -79,7 +79,7 @@ export default function AdminLeadDetail() {
   const handleUpdate = async () => {
     if (!id) return;
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("leads")
       .update({ status, next_follow_up: followUp || null, notes })
       .eq("id", id);
@@ -94,7 +94,7 @@ export default function AdminLeadDetail() {
 
   const handleDelete = async () => {
     if (!id || !confirm("Delete this lead? This cannot be undone.")) return;
-    const { error } = await supabase.from("leads").delete().eq("id", id);
+    const { error } = await (supabase as any).from("leads").delete().eq("id", id);
     if (error) {
       toast.error("Failed to delete: " + error.message);
     } else {
