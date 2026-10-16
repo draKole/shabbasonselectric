@@ -50,7 +50,7 @@ export default function AdminQuickLead() {
     }
     setSaving(true);
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("leads")
         .insert({
           name: form.name.trim(),

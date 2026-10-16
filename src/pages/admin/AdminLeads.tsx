@@ -41,7 +41,7 @@ export default function AdminLeads() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("leads")
         .select("*")
         .order("created_at", { ascending: false });

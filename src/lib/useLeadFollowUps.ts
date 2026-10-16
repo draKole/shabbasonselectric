@@ -68,7 +68,7 @@ export function useLeadFollowUps() {
       const today = new Date().toISOString().slice(0, 10);
 
       // 1. Stale new leads — created > 2 days, still new_lead
-      const { data: staleNewLeads } = await supabase
+      const { data: staleNewLeads } = await (supabase as any)
         .from("leads")
         .select("id, name, phone, service_requested, created_at")
         .eq("status", "new_lead")
@@ -89,7 +89,7 @@ export function useLeadFollowUps() {
       }
 
       // 2. Stale site visits — updated > 3 days, still site_visit_needed
-      const { data: staleSiteVisits } = await supabase
+      const { data: staleSiteVisits } = await (supabase as any)
         .from("leads")
         .select("id, name, phone, service_requested, updated_at")
         .eq("status", "site_visit_needed")
@@ -110,7 +110,7 @@ export function useLeadFollowUps() {
       }
 
       // 3. Cold estimates — updated > 5 days, still estimate_sent
-      const { data: coldEstimates } = await supabase
+      const { data: coldEstimates } = await (supabase as any)
         .from("leads")
         .select("id, name, phone, service_requested, updated_at")
         .eq("status", "estimate_sent")
@@ -133,7 +133,7 @@ export function useLeadFollowUps() {
       // 4. Past-due follow-ups — next_follow_up <= today, not in terminal stages
       // Collect IDs already covered by categories 1-3 to avoid dupes
       const coveredLeadIds = new Set(results.map((r) => r.id));
-      const { data: pastDueFollowUps } = await supabase
+      const { data: pastDueFollowUps } = await (supabase as any)
         .from("leads")
         .select("id, name, phone, service_requested, next_follow_up, status")
         .lte("next_follow_up", today)
