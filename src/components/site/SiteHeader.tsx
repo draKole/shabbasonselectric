@@ -53,11 +53,11 @@ export const SiteHeader = () => {
           <Button asChild variant="outline" size="sm" className="gap-2">
             <a href={telHref}><Phone className="h-4 w-4" /> {BUSINESS.phone}</a>
           </Button>
-          <Link to="/schedule">
+          <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer">
             <Button size="sm" className="bg-success text-success-foreground hover:bg-success/90">
               Schedule
             </Button>
-          </Link>
+          </a>
         </div>
 
         <button

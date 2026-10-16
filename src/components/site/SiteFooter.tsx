@@ -41,7 +41,7 @@ export const SiteFooter = () => {
           <h4 className="font-bold mb-3">Pages</h4>
           <ul className="space-y-2 text-sm opacity-90">
             <li><Link to="/services" className="hover:text-secondary">Services</Link></li>
-            <li><Link to="/schedule" className="hover:text-secondary">Schedule Service</Link></li>
+            <li><a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer" className="hover:text-secondary">Schedule Service</a></li>
             <li><Link to="/portfolio" className="hover:text-secondary">Portfolio</Link></li>
             <li><Link to="/reviews" className="hover:text-secondary">Reviews</Link></li>
             <li><Link to="/contractor-support" className="hover:text-secondary">Permit Support</Link></li>

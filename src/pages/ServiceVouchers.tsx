@@ -76,7 +76,7 @@ export default function ServiceVouchers() {
             <div className="flex flex-wrap gap-2">
               <Button onClick={submit} className="flex-1 min-w-[160px]">Request Voucher</Button>
               <a href={`tel:${settings.business_phone || "6146718528"}`}><Button variant="outline"><Phone className="h-4 w-4 mr-1" /> Call</Button></a>
-              <a href="/schedule"><Button variant="outline"><Calendar className="h-4 w-4 mr-1" /> Schedule consult</Button></a>
+              <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer"><Button variant="outline"><Calendar className="h-4 w-4 mr-1" /> Schedule consult</Button></a>
             </div>
             <p className="text-[11px] text-muted-foreground">This is a prepayment for future electrical labor. Not a loan, investment, or financing product.</p>
           </Card>

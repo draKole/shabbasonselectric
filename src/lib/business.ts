@@ -16,3 +16,6 @@ export const BUSINESS = {
 export const telHref = `tel:+${BUSINESS.phoneDigits}`;
 export const smsHref = (body = BUSINESS.smsDefaultBody) =>
   `sms:+${BUSINESS.phoneDigits}?&body=${encodeURIComponent(body)}`;
+
+// Public service requests go to SHABBA OS. The internal /schedule form is kept but no longer linked publicly.
+export const INQUIRY_URL = "https://shabba-biz-core.base44.app/inquiry";

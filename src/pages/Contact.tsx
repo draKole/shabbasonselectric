@@ -27,7 +27,7 @@ export default function Contact() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
             <Button asChild className="w-full bg-success text-success-foreground hover:bg-success/90 gap-1"><a href={telHref}><Phone className="h-4 w-4" />Call</a></Button>
             <Button asChild variant="outline" className="w-full gap-1"><a href={smsHref()}><MessageSquare className="h-4 w-4" />Text</a></Button>
-            <Link to="/schedule"><Button variant="outline" className="w-full gap-1"><Calendar className="h-4 w-4" />Schedule</Button></Link>
+            <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full gap-1"><Calendar className="h-4 w-4" />Schedule</Button></a>
             <a href={`mailto:${BUSINESS.email}`}><Button variant="outline" className="w-full gap-1"><Mail className="h-4 w-4" />Email</Button></a>
           </div>
         </Card>

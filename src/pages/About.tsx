@@ -31,7 +31,7 @@ export default function About() {
           schedule a free estimate.
         </p>
         <div className="pt-2 flex flex-wrap gap-2">
-          <Link to="/schedule"><Button className="bg-success text-success-foreground hover:bg-success/90">Schedule Service</Button></Link>
+          <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer"><Button className="bg-success text-success-foreground hover:bg-success/90">Schedule Service</Button></a>
           <a href={telHref}><Button variant="outline">Call Now</Button></a>
         </div>
       </Card>

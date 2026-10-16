@@ -92,11 +92,11 @@ export default function Services() {
               ))}
             </div>
             <div className="mt-5">
-              <Link to="/schedule">
+              <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer">
                 <Button className="bg-success text-success-foreground hover:bg-success/90">
                   {s.cta}
                 </Button>
-              </Link>
+              </a>
             </div>
           </Card>
         ))}
@@ -126,9 +126,9 @@ export default function Services() {
             <Link to="/contractor-support">
               <Button variant="outline" className="gap-2">Learn more <ArrowRight className="h-4 w-4" /></Button>
             </Link>
-            <Link to="/schedule">
+            <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer">
               <Button className="bg-success text-success-foreground hover:bg-success/90">Request Contractor Support</Button>
-            </Link>
+            </a>
           </div>
         </Card>
       </div>
