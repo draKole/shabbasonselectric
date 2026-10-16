@@ -163,11 +163,11 @@ export default function Home() {
             landlords, contractors, and businesses across {BUSINESS.serviceArea}.
           </p>
           <div className="mt-7 flex flex-wrap gap-3">
-            <Link to="/schedule">
+            <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer">
               <Button size="lg" className="bg-success text-success-foreground hover:bg-success/90 gap-2">
                 <Calendar className="h-5 w-5" /> Schedule Free Estimate
               </Button>
-            </Link>
+            </a>
             <Button asChild size="lg" variant="outline" className="gap-2 bg-background/10 border-background/30 text-primary-foreground hover:bg-background/20">
               <a href={telHref}><Phone className="h-5 w-5" /> Call {BUSINESS.phone}</a>
             </Button>
@@ -301,11 +301,11 @@ export default function Home() {
             <Button asChild size="lg" className="bg-success text-success-foreground hover:bg-success/90 gap-2">
               <a href={telHref}><Phone className="h-5 w-5" /> Call Now</a>
             </Button>
-            <Link to="/schedule">
+            <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer">
               <Button size="lg" variant="outline" className="gap-2 bg-background/10 border-background/30 text-primary-foreground hover:bg-background/20">
                 <Calendar className="h-5 w-5" /> Schedule Service
               </Button>
-            </Link>
+            </a>
           </div>
           <div className="mt-6 text-sm opacity-90">
             Looking for work? <Link to="/careers" className="underline font-semibold">Apply here</Link>

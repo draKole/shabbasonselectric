@@ -20,13 +20,13 @@ export const StickyMobileBar = () => {
           <MessageSquare className="h-5 w-5" />
           <span className="text-xs">Text</span>
         </a>
-        <Link
-          to="/schedule"
+        <a
+          href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer"
           className="flex flex-col items-center justify-center gap-1 py-3 text-primary font-semibold"
         >
           <Calendar className="h-5 w-5" />
           <span className="text-xs">Schedule</span>
-        </Link>
+        </a>
       </div>
     </div>
   );

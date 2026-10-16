@@ -65,7 +65,7 @@ export default function ContractorSupport() {
         <h2 className="text-2xl font-extrabold">Need help getting a project inspection-ready?</h2>
         <div className="mt-4 flex flex-wrap gap-2 justify-center">
           <a href={telHref}><Button className="bg-success text-success-foreground hover:bg-success/90">Call {BUSINESS.phone}</Button></a>
-          <Link to="/schedule"><Button variant="outline">Request Contractor Support</Button></Link>
+          <a href="https://shabba-biz-core.base44.app/inquiry" target="_blank" rel="noopener noreferrer"><Button variant="outline">Request Contractor Support</Button></a>
         </div>
       </Card>
     </section>
